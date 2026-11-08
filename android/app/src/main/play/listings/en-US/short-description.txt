@@ -1,0 +1,1 @@
+Unofficial companion app to manage your own Sonarr server from your phone.

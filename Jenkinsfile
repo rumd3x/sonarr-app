@@ -18,18 +18,23 @@ pipeline {
             description: 'Release notes for this version (will be included in Forgejo and Play Store releases)'
         )
         booleanParam(
+            name: 'PUBLISH_STORE_LISTING',
+            defaultValue: true,
+            description: 'Also sync the Play Store listing (title, descriptions, icon, feature graphic, screenshots from .docs/screenshots) from the repo. Only used when PUBLISH_TO_PLAY_STORE is enabled'
+        )
+        booleanParam(
             name: 'PUBLISH_TO_PLAY_STORE',
             defaultValue: true,
             description: 'Publish to Google Play Store (requires Play Store credentials configured)'
         )
         choice(
             name: 'PLAY_STORE_TRACK',
-            choices: ['production', 'beta', 'alpha', 'internal'],
+            choices: ['internal', 'alpha', 'beta', 'production'],
             description: 'Play Store release track (only used when PUBLISH_TO_PLAY_STORE is enabled; internal = safe for testing, production = public release)'
         )
         choice(
             name: 'PLAY_STORE_RELEASE_STATUS',
-            choices: ['completed', 'draft'],
+            choices: ['draft', 'completed'],
             description: 'Release status (draft = requires manual review in Play Console, completed = goes live immediately on selected track). Use DRAFT for apps not yet published.'
         )
     }
@@ -199,6 +204,11 @@ EOF
                     cp app-release.aab ${env.APP_NAME}-${env.NEW_VERSION}-${env.NEW_BUILD_NUMBER}.aab
                     ls -lh *.aab
                 """
+                
+                // Archive right away so the AAB is available (e.g. for the manual first upload) even if publishing fails
+                archiveArtifacts artifacts: "build/app/outputs/bundle/release/${env.APP_NAME}-${env.NEW_VERSION}-${env.NEW_BUILD_NUMBER}.aab",
+                                 fingerprint: true,
+                                 allowEmptyArchive: false
             }
         }
         
@@ -228,6 +238,21 @@ EOF
                         
                         // Set environment variables for Gradle
                         def gradleEnv = "PLAY_STORE_TRACK=${track} PLAY_STORE_RELEASE_STATUS=${releaseStatus}"
+                        
+                        // Sync store listing (texts + icon + feature graphic from android/app/src/main/play, screenshots from .docs/screenshots)
+                        if (params.PUBLISH_STORE_LISTING) {
+                            sh '''
+                                SHOTS=android/app/src/main/play/listings/en-US/graphics/phone-screenshots
+                                rm -rf "$SHOTS" && mkdir -p "$SHOTS"
+                                # Play accepts at most 8 phone screenshots, ordered by file name
+                                ls .docs/screenshots/*.png | sort | head -8 | xargs -I{} cp {} "$SHOTS"/
+                                ls -1 "$SHOTS"
+                            '''
+                            sh """
+                                cd android
+                                ${gradleEnv} ./gradlew publishListing --no-daemon
+                            """
+                        }
                         
                         // Publish to Play Store using Gradle task
                         sh """
@@ -365,12 +390,6 @@ EOF
                                      fingerprint: true,
                                      allowEmptyArchive: false
                     
-                    // Archive AAB if it was built
-                    if (params.PUBLISH_TO_PLAY_STORE == true) {
-                        archiveArtifacts artifacts: "build/app/outputs/bundle/release/${env.APP_NAME}-${env.NEW_VERSION}-${env.NEW_BUILD_NUMBER}.aab",
-                                         fingerprint: true,
-                                         allowEmptyArchive: false
-                    }
                 }
             }
         }
