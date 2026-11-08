@@ -23,7 +23,7 @@ def icon() -> None:
     fg = Image.open(BRAND / "logo_foreground.png").convert("RGBA").resize((512, 512), Image.LANCZOS)
     base.alpha_composite(fg)
     (OUT / "icon").mkdir(parents=True, exist_ok=True)
-    base.convert("RGB").save(OUT / "icon" / "icon.png", optimize=True)
+    base.save(OUT / "icon" / "icon.png", optimize=True)
 
 
 def feature_graphic() -> None:
