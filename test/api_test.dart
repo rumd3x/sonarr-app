@@ -6,7 +6,10 @@ import 'package:sonarr_app/services/settings.dart';
 
 void main() {
   test('normalizeUrl adds scheme and strips trailing slash', () {
-    expect(ServerConfig.normalizeUrl('192.168.1.2:8989/'), 'http://192.168.1.2:8989');
+    expect(
+      ServerConfig.normalizeUrl('192.168.1.2:8989/'),
+      'http://192.168.1.2:8989',
+    );
     expect(ServerConfig.normalizeUrl(' https://a.b '), 'https://a.b');
     expect(ServerConfig.normalizeUrl(''), '');
   });
@@ -23,7 +26,10 @@ void main() {
     });
     final api = SonarrApi(
       const ServerConfig(
-          primaryUrl: 'http://primary', secondaryUrl: 'http://secondary', apiKey: 'abc'),
+        primaryUrl: 'http://primary',
+        secondaryUrl: 'http://secondary',
+        apiKey: 'abc',
+      ),
       client: client,
     );
     final status = await api.systemStatus();
@@ -42,7 +48,10 @@ void main() {
         if (r.url.path == '/api') return http.Response('{"current":"v3"}', 200);
         calls.add('${r.method} ${r.url.path}?${r.url.query}');
         if (r.method == 'POST') grabBody = r.body;
-        return http.Response(r.method == 'GET' ? '[{"guid":"g","indexerId":2}]' : '{}', 200);
+        return http.Response(
+          r.method == 'GET' ? '[{"guid":"g","indexerId":2}]' : '{}',
+          200,
+        );
       }),
     );
     final list = await api.releases(7);
@@ -58,5 +67,29 @@ void main() {
       client: MockClient((r) async => http.Response('', 401)),
     );
     expect(api.systemStatus(), throwsA(isA<ApiException>()));
+  });
+
+  test('demo mode serves sample data without a server', () async {
+    final api = SonarrApi(ServerConfig.demo);
+    expect(api.isDemo, isTrue);
+    final series = await api.series();
+    expect(series, isNotEmpty);
+    final id = series.first['id'] as int;
+    expect((await api.episodes(id)), isNotEmpty);
+    expect(await api.queue(), isNotEmpty);
+    expect(await api.missing(), isNotEmpty);
+    expect(await api.releases(1), isNotEmpty);
+    expect(
+      await api.calendar(
+        DateTime.now(),
+        DateTime.now().add(const Duration(days: 30)),
+      ),
+      isNotEmpty,
+    );
+    final updated = await api.updateSeries({
+      ...series.first,
+      'monitored': false,
+    });
+    expect(updated['monitored'], false);
   });
 }

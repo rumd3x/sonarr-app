@@ -1,5 +1,7 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'demo_client.dart';
+
 class ServerConfig {
   final String primaryUrl;
   final String secondaryUrl;
@@ -12,6 +14,15 @@ class ServerConfig {
   });
 
   bool get isValid => primaryUrl.isNotEmpty && apiKey.isNotEmpty;
+
+  /// Demo mode talks to a built-in fake server instead of a real Sonarr.
+  static const demo = ServerConfig(
+    primaryUrl: DemoServer.url,
+    secondaryUrl: '',
+    apiKey: 'demo',
+  );
+
+  bool get isDemo => primaryUrl == DemoServer.url;
 
   static String normalizeUrl(String url) {
     var u = url.trim();

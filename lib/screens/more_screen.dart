@@ -29,7 +29,9 @@ class MoreScreen extends StatelessWidget {
                   leading: Image.asset('assets/branding/logo.png', width: 36),
                   title: Text('Sonarr ${status['version']}'),
                   subtitle: Text(
-                    '${state.api?.activeBase ?? state.config?.primaryUrl}',
+                    state.config?.isDemo == true
+                        ? 'Demo mode · sample data'
+                        : '${state.api?.activeBase ?? state.config?.primaryUrl}',
                   ),
                 ),
               ),

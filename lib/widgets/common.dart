@@ -44,6 +44,7 @@ class Poster extends StatelessWidget {
       color: cs.surfaceContainerHighest,
       child: Icon(Icons.tv, color: cs.onSurfaceVariant),
     );
+    if (api.isDemo) return _DemoPoster(series, width, height, type == 'poster');
     if (url == null) return placeholder;
     return CachedNetworkImage(
       imageUrl: url,
@@ -219,4 +220,53 @@ class ManualSearchButton extends StatelessWidget {
 String episodeCode(Json e) {
   String two(Object? n) => '$n'.padLeft(2, '0');
   return 'S${two(e['seasonNumber'])}E${two(e['episodeNumber'])}';
+}
+
+/// Poster stand-in for demo mode, where there are no remote images.
+class _DemoPoster extends StatelessWidget {
+  final Json series;
+  final double? width;
+  final double? height;
+  final bool showTitle;
+  const _DemoPoster(this.series, this.width, this.height, this.showTitle);
+
+  @override
+  Widget build(BuildContext context) {
+    final title = '${series['title'] ?? '?'}';
+    final big = (height ?? 120) > 100;
+    final hue = (title.codeUnits.fold<int>(0, (a, b) => a * 31 + b) % 360)
+        .toDouble();
+    return Container(
+      width: width,
+      height: height,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            HSLColor.fromAHSL(1, hue, 0.55, 0.38).toColor(),
+            HSLColor.fromAHSL(1, (hue + 40) % 360, 0.6, 0.18).toColor(),
+          ],
+        ),
+      ),
+      child: !showTitle
+          ? null
+          : Padding(
+              padding: const EdgeInsets.all(6),
+              child: Text(
+                big || title.isEmpty ? title : title[0],
+                textAlign: TextAlign.center,
+                maxLines: 4,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.92),
+                  fontSize: big ? 18 : 22,
+                  fontWeight: FontWeight.w800,
+                  height: 1.15,
+                ),
+              ),
+            ),
+    );
+  }
 }

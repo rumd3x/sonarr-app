@@ -169,6 +169,28 @@ class _SetupScreenState extends State<SetupScreen> {
                         minimumSize: const Size.fromHeight(52),
                       ),
                     ),
+                    if (!widget.editing) ...[
+                      const SizedBox(height: 12),
+                      OutlinedButton.icon(
+                        onPressed: _busy
+                            ? null
+                            : () => context.read<AppState>().setConfig(
+                                ServerConfig.demo,
+                              ),
+                        icon: const Icon(Icons.science_outlined),
+                        label: const Text('Try demo'),
+                        style: OutlinedButton.styleFrom(
+                          minimumSize: const Size.fromHeight(52),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Explore the app with built-in sample data. '
+                        'No server needed.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: cs.onSurfaceVariant),
+                      ),
+                    ],
                   ],
                 ),
               ),

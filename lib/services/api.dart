@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import 'demo_client.dart';
 import 'settings.dart';
 
 class ApiException implements Exception {
@@ -26,7 +27,10 @@ class SonarrApi {
   final Map<String, String> _versionByBase = {};
 
   SonarrApi(this.config, {http.Client? client})
-    : _client = client ?? http.Client();
+    : _client =
+          client ?? (config.isDemo ? DemoServer().client() : http.Client());
+
+  bool get isDemo => config.isDemo;
 
   List<String> get _bases => [
     ?_activeBase,
