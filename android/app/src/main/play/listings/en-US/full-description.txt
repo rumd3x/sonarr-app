@@ -1,0 +1,26 @@
+Sonarr is an unofficial companion app for people who run their own Sonarr server. Browse your TV library, search for episodes, follow downloads and fix what is missing, all from a clean, modern mobile interface.
+
+NO ACCOUNT. NO DATABASE.
+There is no sign-up and no login. On first launch you enter the address of your server and your Sonarr API key. That's it. Your settings stay on your device.
+
+RESILIENT CONNECTION
+Set a primary and a secondary URL (for example your home network address and your public domain). If the primary one can't be reached, the app switches to the secondary one automatically.
+
+FEATURES
+• Library: poster grid or list, search, filters and per-series progress
+• Series details: seasons, episodes, monitoring toggles, automatic search, refresh and delete
+• Episode details: file and media info, per-episode history and manual (interactive) search
+• Manual search that keeps running in the background, even when indexers take minutes to answer, then lets you grab the release you want
+• Add series: look up by name or TVDB id, choose root folder, quality profile and monitoring
+• Calendar: upcoming and recent episodes grouped by day
+• Activity: live download queue with remove/blocklist, plus history
+• Wanted: list missing episodes and search for one or all of them
+• Server status: version, health checks and disk space
+• Fast: your library is cached locally and opens instantly, then refreshes in the background
+• Material 3 design with a dark theme
+
+REQUIREMENTS
+You need a running Sonarr instance that your phone can reach (v3 or newer API) and its API key, found under Settings > General > Security in Sonarr.
+
+DISCLAIMER
+This app is not affiliated with, endorsed by or sponsored by the Sonarr project. Sonarr and its logo are the property of their respective owners and are used here under their open-source license. The app does not collect, store or share any personal data; it only talks to the server addresses you provide.

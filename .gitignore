@@ -120,3 +120,7 @@ app.*.symbols
 !/dev/ci/**/Gemfile.lock
 .idea/
 *.iml
+
+# Copied from .docs/screenshots by the Jenkins pipeline before publishListing
+android/app/src/main/play/listings/*/graphics/phone-screenshots/
+android/app/src/main/play/release-notes/
