@@ -38,6 +38,23 @@
 
 See [`.docs/FEATURES.md`](.docs/FEATURES.md) for the full list and the API endpoints used.
 
+## 🖼️ Screenshots
+
+<p align="center">
+  <img src=".docs/screenshots/01-setup.png" width="22%" alt="First-launch setup" />
+  <img src=".docs/screenshots/02-series.png" width="22%" alt="Series library" />
+  <img src=".docs/screenshots/03-series-detail.png" width="22%" alt="Series detail" />
+  <img src=".docs/screenshots/04-episode.png" width="22%" alt="Episode details" />
+</p>
+<p align="center">
+  <img src=".docs/screenshots/05-manual-search.png" width="22%" alt="Manual search" />
+  <img src=".docs/screenshots/06-calendar.png" width="22%" alt="Calendar" />
+  <img src=".docs/screenshots/07-activity.png" width="22%" alt="Download queue" />
+  <img src=".docs/screenshots/08-wanted.png" width="22%" alt="Wanted episodes" />
+</p>
+
+<sub>Captured with demo data; show titles and posters are placeholders.</sub>
+
 ## 🚀 Getting started
 
 1. Install the app on your Android device.
@@ -61,7 +78,7 @@ flutter run
 
 ## 📚 Documentation
 
-Project premises, features and architecture live in [`.docs/`](.docs/). Contributors (and AI agents) must read it before making changes and keep it updated — see [`AGENTS.md`](AGENTS.md).
+Project premises, features and architecture live in [`.docs/`](.docs/). Contributors (and AI agents) must read it before making changes and keep it updated — see [`AGENTS.md`](AGENTS.md). To build the same app for Radarr, Lidarr, Readarr, etc., follow [`.docs/PLAYBOOK.md`](.docs/PLAYBOOK.md).
 
 ## 📄 License
 

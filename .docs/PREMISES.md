@@ -1,6 +1,6 @@
 # Premises
 
-- **Name:** Sonarr (unofficial). Flutter, Android only (`tv.sonarr.unofficial`).
+- **Name:** Sonarr (unofficial). Flutter, Android only (`com.rumd3x.sonarr`).
 - **Goal:** let Sonarr administrators manage their own Sonarr instance from a phone, with an elegant mobile UI.
 - **No accounts:** no login, no registration, no backend of our own, no database.
 - **Local storage only:** `shared_preferences` holds the connection settings and a small cache of the series list. Nothing else is persisted. "Disconnect" wipes it all.
