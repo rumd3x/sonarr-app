@@ -37,7 +37,7 @@ pipeline {
     environment {
         FORGEJO_CREDENTIALS_ID = 'forgejo-credentials'  // Jenkins "secret text" credential holding a Forgejo access token (write:repository)
         FORGEJO_HOST = 'forgejo.rumd3x.com'
-        FORGEJO_REPO = 'rumd3x/sonarr-app'  // Forgejo mirrors pushes to GitHub automatically
+        FORGEJO_REPO = 'Arr/sonarr-app'  // Forgejo mirrors pushes to GitHub automatically
         GIT_BRANCH_NAME = 'master'  // Branch that receives the version bump commit
         APP_NAME = 'sonarr'
         PLAY_STORE_CREDENTIALS_ID = 'play-store-service-account'  // Jenkins credential ID for Play Store JSON key
