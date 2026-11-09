@@ -18,6 +18,7 @@
 ## ✨ Highlights
 
 - **Zero accounts** – no login, no registration, no database. Just your server URL and API key.
+- **Try it without a server** – a built-in demo mode with sample data lets you explore every feature before connecting.
 - **Resilient connection** – set a primary and a secondary URL (e.g. LAN + public domain); the app fails over automatically.
 - **Full-featured** – browse, add, monitor, search and delete series, check the calendar, queue, history and missing episodes.
 - **Fast** – library is cached locally and opens instantly, then refreshes in the background.
@@ -63,6 +64,8 @@ See [`.docs/FEATURES.md`](.docs/FEATURES.md) for the full list and the API endpo
    - **Secondary URL** *(optional)* – e.g. `https://sonarr.example.com`
    - **API key** – Sonarr → *Settings → General → Security*
 3. Tap **Connect**.
+
+No server handy? Tap **Try demo** to explore the app with built-in sample data.
 
 ## 🛠️ Development
 
