@@ -3,6 +3,9 @@ Sonarr is an unofficial companion app for people who run their own Sonarr server
 NO ACCOUNT. NO DATABASE.
 There is no sign-up and no login. On first launch you enter the address of your server and your Sonarr API key. That's it. Your settings stay on your device.
 
+TRY IT WITHOUT A SERVER
+Don't have Sonarr yet? Tap "Try demo" on the first screen to explore every feature with built-in sample data. No server, account or credentials needed.
+
 RESILIENT CONNECTION
 Set a primary and a secondary URL (for example your home network address and your public domain). If the primary one can't be reached, the app switches to the secondary one automatically.
 
