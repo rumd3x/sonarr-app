@@ -10,4 +10,4 @@
 | [FEATURES.md](FEATURES.md) | Complete feature list, per screen, with the Sonarr endpoints used |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Code layout, data flow, build/test commands |
 | [PLAYBOOK.md](PLAYBOOK.md) | Step-by-step recipe to build the same app for Radarr, Lidarr, Readarr, Prowlarr…: env gotchas, CI/CD, Google Play prerequisites, screenshot workflow |
-| [screenshots/](screenshots/) | Store/README screenshots (01–09, 1196×2392, ≤2:1 as Google Play requires). Captured on the emulator against a mock Sonarr with fictional data. **Retake them when the UI changes.** |
+| [screenshots/](screenshots/) | Store/README screenshots (01–09, 1196×2392, ≤2:1 as Google Play requires). Captured on the emulator against a mock Sonarr with fictional data (the in-app demo mode can be used for retakes). **Retake them when the UI changes.** |

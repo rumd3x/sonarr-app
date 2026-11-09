@@ -3,8 +3,9 @@
 - **Name:** Sonarr (unofficial). Flutter, Android only (`com.rumd3x.sonarr`).
 - **Goal:** let Sonarr administrators manage their own Sonarr instance from a phone, with an elegant mobile UI.
 - **No accounts:** no login, no registration, no backend of our own, no database.
-- **Local storage only:** `shared_preferences` holds the connection settings and a small cache of the series list. Nothing else is persisted. "Disconnect" wipes it all.
-- **First launch:** the app must ask for **primary URL**, **secondary URL** (optional fallback) and the **Sonarr API key**. The connection is verified (`GET /system/status`) before saving.
+- **Local storage only:** `shared_preferences` holds the connection settings and a small cache of the series list. Nothing else is persisted (demo mode only stores the demo config marker). "Disconnect" wipes it all.
+- **First launch:** the app must ask for **primary URL**, **secondary URL** (optional fallback) and the **Sonarr API key**. The connection is verified (`GET /system/status`) before saving. A **Try demo** button skips this and uses built-in sample data (see Demo mode).
+- **Demo mode:** the Setup screen has a **Try demo** button that stores `ServerConfig.demo` (URL `http://demo.sonarr.local`) and serves every request from an in-memory fake server (`lib/services/demo_client.dart`). It exists because Google Play reviewers need a way into an app that otherwise requires a self-hosted server. It must keep working with every screen/endpoint the app uses; when you add an API call, add it to `DemoServer`. No data leaves the device in demo mode.
 - **URL failover:** every request tries the last working URL first, then the other one. Only network failures trigger failover; HTTP errors (e.g. 401) do not.
 - **Auth:** API key sent as `X-Api-Key` header; image URLs served by Sonarr use the `apikey` query parameter.
 - **API version:** detected at runtime via `GET /api` (`current` field, e.g. `v3`, `v5`), defaulting to `v3`. API reference: https://sonarr.tv/docs/api/

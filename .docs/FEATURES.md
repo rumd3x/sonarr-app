@@ -5,6 +5,7 @@ Navigation: bottom bar with **Series · Calendar · Activity · Wanted · More**
 ## Setup / Connection (`setup_screen.dart`)
 - Official Sonarr logo header, primary URL, secondary URL (fallback), API key (hidden, toggle visibility).
 - URLs are normalized (adds `http://`, strips trailing `/`) and validated.
+- **Try demo** button: runs the whole app against a built-in fake Sonarr (`services/demo_client.dart`) with sample series, queue, calendar, history and releases. No network or credentials; edits are kept in memory only. "Disconnect & clear data" leaves demo mode.
 - Connection test before saving. Same screen is reused (editing mode) from More → Connection settings.
 
 ## Series (`series_list_screen.dart`)
@@ -55,9 +56,10 @@ Opened by tapping an episode (series detail, Calendar, Wanted); the manual-searc
 
 ## More (`more_screen.dart`)
 - Sonarr logo card with version and active URL, health warnings/errors, disk space bars.
+- In demo mode the card shows "Demo mode · sample data" instead of the URL.
 - Connection settings, Disconnect & clear data.
 - `GET /system/status`, `GET /health`, `GET /diskspace`
 
 ## Cross-cutting
-- Shared widgets in `widgets/common.dart`: poster with cached images, loading/error/empty states, pull-to-refresh loader, toasts.
+- Shared widgets in `widgets/common.dart`: poster with cached images (in demo mode a generated gradient with the title/initial, since there are no remote images), loading/error/empty states, pull-to-refresh loader, toasts.
 - Errors are surfaced as readable messages (invalid API key, unreachable server, Sonarr validation messages).
