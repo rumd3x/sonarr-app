@@ -88,6 +88,21 @@ Tips that saved time:
 - Output goes to `.docs/screenshots/NN-name.png` (01 setup, 02 series, 03 series detail, 04 episode, 05 manual search, 06 calendar, 07 activity, 08 wanted, 09 more) and is referenced from `README.md`. Retake them when the UI changes.
 - Delete the mock server and temp files afterwards.
 
+## 5b. Porting features added after the first app (Radarr / Lidarr / Readarr…)
+
+Features built in the Sonarr app that a sibling app should replicate. Details of each are in `FEATURES.md`; the files are listed so they can be copied and adapted. Replace series/episodes with the app's entities (Lidarr: artist/album/track; Radarr: movie; Readarr: author/book) and **verify each endpoint against that app's API docs and a real server** (field names differ).
+- **Queue badge on the Activity nav item**: `GET /queue/status` → `totalCount`; `AppState.queueCount` + `refreshQueueCount()`, polled every 30 s in `HomeScreen` (`WidgetsBindingObserver`, paused in background), refreshed after each queue load; `Badge` on both icon and selectedIcon.
+- **Wanted split into Missing / Cutoff unmet tabs**: `GET /wanted/missing` and `GET /wanted/cutoff` (same query params), app-bar "search all" acts on the current tab (`MissingEpisodeSearch`/`CutoffUnmetEpisodeSearch` in Sonarr; use the equivalent command names, e.g. `MissingAlbumSearch`/`CutoffUnmetAlbumSearch` in Lidarr).
+- **Manual import screen** (`manual_import_screen.dart`) from queue items needing manual interaction (`trackedDownloadState` `importBlocked`/`importPending`/`importFailed` + `trackedDownloadStatus` `warning`). Lessons learned on a real server:
+  - Query `GET /manualimport?downloadId=…` first (Sonarr then matches the series itself); fall back to `folder=<outputPath>` only on error/empty. Folder alone loses the match; downloadId alone can fail with "Parameter 'path'".
+  - Show the queue item's `statusMessages` on the file they refer to (match by `title` = file name), not at the top of the screen; raw `rejections` (`unknownSeries`…) are only a fallback.
+  - Pre-fill the series/artist from the queue item (`series` → `seriesId` lookup → `GET /parse?title=`), keep it editable.
+  - Multi-select languages; show the air/release date in the episode/album picker; no import-mode selector (always `auto`).
+  - Import with `POST /command` `ManualImport`. Lidarr's file payload differs (artist/album/track ids, `albumReleaseId`): check what its web UI sends (browser dev tools → Network) before porting.
+- **Posters on calendar/wanted**: the series/artist embedded in these records has only an `id` and no `images`, and `/MediaCover` may redirect to the login page even with `apikey`. `Poster` therefore looks the images up by id in the list endpoint (`AppState.seriesImages()`), using `remoteUrl`. Don't debug this blindly: add temporary `debugPrint`s and read `adb logcat -d | grep <tag>`.
+- **Demo mode** must get every new endpoint (`/queue/status`, `/manualimport`, `/qualitydefinition`, `/language`, `/wanted/cutoff`) plus a queue item that is `importBlocked`.
+- **Environment**: JDK 17 for Gradle; if a build fails with "problem starting process flutter", run `./gradlew --stop` in `android/` and retry.
+
 ## 6. Definition of done for a new app
 
 - [ ] `flutter analyze` clean, `flutter test` passes, release APK builds (JDK 17).

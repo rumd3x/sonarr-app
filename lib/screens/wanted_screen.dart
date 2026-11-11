@@ -6,15 +6,82 @@ import '../services/app_state.dart';
 import '../widgets/common.dart';
 import 'calendar_screen.dart';
 
-class WantedScreen extends StatefulWidget {
+class WantedScreen extends StatelessWidget {
   const WantedScreen({super.key});
 
+  Future<void> _searchAll(BuildContext context, bool cutoff) async {
+    final api = context.read<AppState>().api!;
+    try {
+      if (cutoff) {
+        await api.searchCutoffUnmet();
+      } else {
+        await api.searchMissing();
+      }
+      if (context.mounted) {
+        toast(
+          context,
+          cutoff
+              ? 'Searching for all cutoff unmet episodes'
+              : 'Searching for all missing episodes',
+        );
+      }
+    } catch (e) {
+      if (context.mounted) toast(context, '$e');
+    }
+  }
+
   @override
-  State<WantedScreen> createState() => _WantedScreenState();
+  Widget build(BuildContext context) => DefaultTabController(
+    length: 2,
+    child: Builder(
+      builder: (context) {
+        final tabs = DefaultTabController.of(context);
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text('Wanted'),
+            actions: [
+              AnimatedBuilder(
+                animation: tabs.animation!,
+                builder: (context, _) {
+                  final cutoff = tabs.animation!.value.round() == 1;
+                  return IconButton(
+                    tooltip: cutoff
+                        ? 'Search all cutoff unmet'
+                        : 'Search all missing',
+                    icon: const Icon(Icons.manage_search),
+                    onPressed: () => _searchAll(context, cutoff),
+                  );
+                },
+              ),
+            ],
+            bottom: const TabBar(
+              tabs: [
+                Tab(text: 'Missing'),
+                Tab(text: 'Cutoff unmet'),
+              ],
+            ),
+          ),
+          body: const TabBarView(
+            children: [_WantedTab(cutoff: false), _WantedTab(cutoff: true)],
+          ),
+        );
+      },
+    ),
+  );
 }
 
-class _WantedScreenState extends State<WantedScreen> {
-  final _key = GlobalKey<AsyncBodyState<List<Json>>>();
+class _WantedTab extends StatefulWidget {
+  final bool cutoff;
+  const _WantedTab({required this.cutoff});
+
+  @override
+  State<_WantedTab> createState() => _WantedTabState();
+}
+
+class _WantedTabState extends State<_WantedTab>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
 
   Future<void> _search(List<int> ids, String ok) async {
     try {
@@ -26,34 +93,15 @@ class _WantedScreenState extends State<WantedScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
-      title: const Text('Wanted'),
-      actions: [
-        IconButton(
-          tooltip: 'Search all missing',
-          icon: const Icon(Icons.manage_search),
-          onPressed: () async {
-            try {
-              await context.read<AppState>().api!.searchMissing();
-              if (context.mounted) {
-                toast(context, 'Searching for all missing episodes');
-              }
-            } catch (e) {
-              if (context.mounted) toast(context, '$e');
-            }
-          },
-        ),
-      ],
-    ),
-    body: AsyncBody<List<Json>>(
-      key: _key,
-      load: (api) => api.missing(),
+  Widget build(BuildContext context) {
+    super.build(context);
+    return AsyncBody<List<Json>>(
+      load: (api) => widget.cutoff ? api.cutoffUnmet() : api.missing(),
       builder: (context, list) {
         if (list.isEmpty) {
-          return const EmptyView(
+          return EmptyView(
             Icons.check_circle_outline,
-            'No missing episodes',
+            widget.cutoff ? 'No cutoff unmet episodes' : 'No missing episodes',
           );
         }
         return ListView.builder(
@@ -79,6 +127,6 @@ class _WantedScreenState extends State<WantedScreen> {
           ),
         );
       },
-    ),
-  );
+    );
+  }
 }

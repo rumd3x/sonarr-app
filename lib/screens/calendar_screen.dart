@@ -87,6 +87,7 @@ class EpisodeCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final series = Json.from((episode['series'] as Map?) ?? {});
+    series['id'] ??= episode['seriesId'];
     final air = DateTime.tryParse('${episode['airDateUtc']}')?.toLocal();
     final hasFile = episode['hasFile'] == true;
     return Card(

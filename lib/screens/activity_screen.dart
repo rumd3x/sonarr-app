@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../services/api.dart';
 import '../services/app_state.dart';
 import '../widgets/common.dart';
+import 'manual_import_screen.dart';
 
 class ActivityScreen extends StatelessWidget {
   const ActivityScreen({super.key});
@@ -79,12 +80,25 @@ class _QueueTabState extends State<_QueueTab>
     }
   }
 
+  Future<void> _resolve(Json item) async {
+    final done = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => ManualImportScreen(queueItem: item)),
+    );
+    if (done == true) _key.currentState?.reload();
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
     return AsyncBody<List<Json>>(
       key: _key,
-      load: (api) => api.queue(),
+      load: (api) async {
+        final state = context.read<AppState>();
+        final list = await api.queue();
+        state.refreshQueueCount();
+        return list;
+      },
       builder: (context, list) {
         if (list.isEmpty) {
           return const EmptyView(Icons.downloading_outlined, 'Queue is empty');
@@ -117,6 +131,13 @@ class _QueueTabState extends State<_QueueTab>
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
+                        if (needsManualImport(q))
+                          IconButton(
+                            tooltip: 'Manual import',
+                            visualDensity: VisualDensity.compact,
+                            icon: const Icon(Icons.person_search_outlined),
+                            onPressed: () => _resolve(q),
+                          ),
                         IconButton(
                           visualDensity: VisualDensity.compact,
                           icon: const Icon(Icons.close),

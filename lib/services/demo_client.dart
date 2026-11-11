@@ -13,6 +13,7 @@ class DemoServer {
   final Map<int, List<Map<String, dynamic>>> _episodes = {};
   final List<Map<String, dynamic>> _queue = [];
   final List<Map<String, dynamic>> _history = [];
+  List<Map<String, dynamic>> _manualFiles = [];
   var _nextId = 100;
 
   DemoServer() {
@@ -208,6 +209,57 @@ class DemoServer {
       });
     }
 
+    if (queued.length > 2) {
+      final e = queued[2];
+      final name =
+          'Starfall.Station.S${_p(e['seasonNumber'] as int)}'
+          'E${_p(e['episodeNumber'] as int)}.1080p.WEB-DL';
+      _queue.add({
+        'id': 502,
+        'title': name,
+        'status': 'completed',
+        'trackedDownloadStatus': 'warning',
+        'trackedDownloadState': 'importBlocked',
+        'statusMessages': [
+          {
+            'title': name,
+            'messages': [
+              'Found matching series via grab history, but season and episode info could not be verified',
+            ],
+          },
+        ],
+        'downloadId': 'DEMO502',
+        'size': 2000000000,
+        'sizeleft': 0,
+        'downloadClient': 'qBittorrent',
+        'series': _series[0],
+        'episode': e,
+      });
+      _manualFiles = [
+        {
+          'id': 1,
+          'path': '/downloads/$name/$name.mkv',
+          'relativePath': '$name.mkv',
+          'name': name,
+          'size': 2000000000,
+          'series': null,
+          'episodes': <Map<String, dynamic>>[],
+          'quality': {
+            'quality': {'id': 7, 'name': 'WEBDL-1080p'},
+            'revision': {'version': 1, 'real': 0, 'isRepack': false},
+          },
+          'languages': [
+            {'id': 1, 'name': 'English'},
+          ],
+          'releaseGroup': 'DEMO',
+          'downloadId': 'DEMO502',
+          'rejections': [
+            {'reason': 'Unknown Series', 'type': 'permanent'},
+          ],
+        },
+      ];
+    }
+
     for (final e in starfall.where((e) => e['hasFile'] == true).take(6)) {
       _history.add({
         'id': _nextId++,
@@ -389,6 +441,8 @@ class DemoServer {
               .toList();
         }
         return _json({'page': 1, 'totalRecords': list.length, 'records': list});
+      case '/queue/status':
+        return _json({'totalCount': _queue.length});
       case '/queue':
         return _json({
           'page': 1,
@@ -405,11 +459,49 @@ class DemoServer {
                 _episodeOut(e),
         ];
         return _json({'page': 1, 'totalRecords': recs.length, 'records': recs});
+      case '/wanted/cutoff':
+        final recs = [
+          for (final eps in _episodes.values)
+            for (final e in eps)
+              if (e['hasFile'] == true && e['monitored'] == true)
+                _episodeOut(e),
+        ].take(4).toList();
+        return _json({'page': 1, 'totalRecords': recs.length, 'records': recs});
       case '/release':
         if (m == 'POST') return _json({});
         await Future<void>.delayed(const Duration(milliseconds: 900));
         return _json(_releases(int.tryParse(q['episodeId'] ?? '') ?? 0));
+      case '/manualimport':
+        return _json(_manualFiles);
+      case '/qualitydefinition':
+        return _json([
+          for (final (id, n) in const [
+            (4, 'HDTV-720p'),
+            (5, 'WEBDL-720p'),
+            (7, 'WEBDL-1080p'),
+            (18, 'WEBDL-2160p'),
+          ])
+            {
+              'id': id,
+              'title': n,
+              'quality': {'id': id, 'name': n},
+            },
+        ]);
+      case '/language':
+        return _json([
+          {'id': -1, 'name': 'Any'},
+          {'id': 1, 'name': 'English'},
+          {'id': 2, 'name': 'French'},
+          {'id': 3, 'name': 'Spanish'},
+        ]);
       case '/command':
+        if (body is Map && body['name'] == 'ManualImport') {
+          final ids = {
+            for (final f in body['files'] as List) (f as Map)['downloadId'],
+          };
+          _queue.removeWhere((e) => ids.contains(e['downloadId']));
+          _manualFiles = [];
+        }
         return _json({'id': _nextId++, 'status': 'queued'}, 201);
     }
 

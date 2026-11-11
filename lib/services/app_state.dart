@@ -57,6 +57,39 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  int queueCount = 0;
+
+  /// Refreshes the number of items in the download queue (Activity badge).
+  Future<void> refreshQueueCount() async {
+    final client = api;
+    if (client == null) return;
+    try {
+      final n = await client.queueCount();
+      if (n != queueCount && api == client) {
+        queueCount = n;
+        notifyListeners();
+      }
+    } catch (_) {}
+  }
+
+  Future<Map<int, List>>? _imagesIndex;
+
+  /// Series id -> images, for episodes whose embedded series has no images
+  /// (calendar, wanted). Loaded once from the series list.
+  Future<Map<int, List>> seriesImages() => _imagesIndex ??= api!
+      .series()
+      .then(
+        (list) => {
+          for (final s in list)
+            if (s['id'] is int && s['images'] is List)
+              s['id'] as int: s['images'] as List,
+        },
+      )
+      .catchError((Object _) {
+        _imagesIndex = null;
+        return <int, List>{};
+      });
+
   final SettingsStore store;
   ServerConfig? config;
   SonarrApi? api;
@@ -73,6 +106,7 @@ class AppState extends ChangeNotifier {
 
   Future<void> setConfig(ServerConfig c) async {
     await store.save(c);
+    _imagesIndex = null;
     config = await store.load();
     api?.dispose();
     api = config == null ? null : SonarrApi(config!);
@@ -81,6 +115,7 @@ class AppState extends ChangeNotifier {
 
   Future<void> reset() async {
     await store.clear();
+    _imagesIndex = null;
     final p = await SharedPreferences.getInstance();
     await p.remove(_seriesCacheKey);
     manualSearches.clear();

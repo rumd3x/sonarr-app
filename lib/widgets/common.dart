@@ -35,7 +35,21 @@ class Poster extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final api = context.read<AppState>().api!;
+    final state = context.read<AppState>();
+    final api = state.api!;
+    final id = series['id'];
+    // Series embedded in episodes (calendar, wanted) come without images.
+    if (!api.isDemo && series['images'] is! List && id is int) {
+      return FutureBuilder<Map<int, List>>(
+        future: state.seriesImages(),
+        builder: (context, snap) => Poster(
+          {...series, 'images': snap.data?[id] ?? const []},
+          type: type,
+          width: width,
+          height: height,
+        ),
+      );
+    }
     final url = imageUrl(api, series, type);
     final cs = Theme.of(context).colorScheme;
     final placeholder = Container(
