@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -91,5 +93,25 @@ void main() {
       'monitored': false,
     });
     expect(updated['monitored'], false);
+  });
+
+  test('manualImport posts a ManualImport command', () async {
+    Map? body;
+    final api = SonarrApi(
+      const ServerConfig(primaryUrl: 'http://p', secondaryUrl: '', apiKey: 'k'),
+      client: MockClient((req) async {
+        if (req.url.path == '/api') {
+          return http.Response('{"current":"v3"}', 200);
+        }
+        body = req.bodyBytes.isEmpty ? null : jsonDecode(req.body) as Map;
+        return http.Response('{}', 201);
+      }),
+    );
+    await api.manualImport([
+      {'path': '/a.mkv'},
+    ], mode: 'copy');
+    expect(body!['name'], 'ManualImport');
+    expect(body!['importMode'], 'copy');
+    expect((body!['files'] as List).length, 1);
   });
 }

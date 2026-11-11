@@ -236,6 +236,11 @@ class SonarrApi {
     return _list(r is Map ? r['records'] : r);
   }
 
+  Future<int> queueCount() async {
+    final r = await _send('GET', '/queue/status');
+    return (r is Map ? r['totalCount'] as num? : null)?.toInt() ?? 0;
+  }
+
   Future<void> removeQueueItem(int id, {bool blocklist = false}) async {
     await _send(
       'DELETE',
@@ -243,6 +248,48 @@ class SonarrApi {
       query: {'removeFromClient': true, 'blocklist': blocklist},
     );
   }
+
+  /// Files Sonarr found for a download that needs manual import
+  /// (the web UI's "Interactive Import").
+  /// Resolving by [downloadId] lets Sonarr match the series like the web UI
+  /// does, but it fails when the client reports no output path; in that case
+  /// (or when it finds nothing) the download's [folder] is used instead.
+  Future<List<Json>> manualImportCandidates({
+    String? folder,
+    String? downloadId,
+  }) async {
+    Future<List<Json>> fetch(Map<String, dynamic> q) async => _list(
+      await _send(
+        'GET',
+        '/manualimport',
+        query: {...q, 'filterExistingFiles': false},
+      ),
+    );
+
+    final hasFolder = folder != null && folder.trim().isNotEmpty;
+    if (downloadId != null && downloadId.isNotEmpty) {
+      try {
+        final r = await fetch({'downloadId': downloadId});
+        if (r.isNotEmpty || !hasFolder) return r;
+      } on ApiException {
+        if (!hasFolder) rethrow;
+      }
+    }
+    return fetch({'folder': folder});
+  }
+
+  /// Series/episodes Sonarr infers from a release title.
+  Future<Json> parse(String title) async =>
+      Json.from(await _send('GET', '/parse', query: {'title': title}));
+
+  Future<void> manualImport(List<Json> files, {String mode = 'auto'}) =>
+      command('ManualImport', {'files': files, 'importMode': mode});
+
+  Future<List<Json>> qualityDefinitions() async =>
+      _list(await _send('GET', '/qualitydefinition'));
+
+  Future<List<Json>> languages() async =>
+      _list(await _send('GET', '/language'));
 
   Future<List<Json>> history({int pageSize = 50}) async {
     final r = await _send(
@@ -260,10 +307,17 @@ class SonarrApi {
     return _list(r is Map ? r['records'] : r);
   }
 
-  Future<List<Json>> missing({int page = 1, int pageSize = 50}) async {
+  Future<List<Json>> missing({int page = 1, int pageSize = 50}) =>
+      _wanted('missing', page, pageSize);
+
+  /// Episodes whose file quality is below the profile's cutoff.
+  Future<List<Json>> cutoffUnmet({int page = 1, int pageSize = 50}) =>
+      _wanted('cutoff', page, pageSize);
+
+  Future<List<Json>> _wanted(String kind, int page, int pageSize) async {
     final r = await _send(
       'GET',
-      '/wanted/missing',
+      '/wanted/$kind',
       query: {
         'page': page,
         'pageSize': pageSize,
@@ -290,6 +344,7 @@ class SonarrApi {
   Future<void> refreshSeries(int seriesId) =>
       command('RefreshSeries', {'seriesId': seriesId});
   Future<void> searchMissing() => command('MissingEpisodeSearch');
+  Future<void> searchCutoffUnmet() => command('CutoffUnmetEpisodeSearch');
 
   List<Json> _list(dynamic v) =>
       (v as List? ?? const []).map((e) => Json.from(e as Map)).toList();

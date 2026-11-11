@@ -7,15 +7,17 @@ lib/
     settings.dart           ServerConfig + SettingsStore (shared_preferences)
     demo_client.dart        DemoServer: in-memory fake Sonarr (MockClient) behind "Try demo"; ServerConfig.demo selects it
     api.dart                SonarrApi: HTTP client, failover, version detection, endpoints
-    app_state.dart          AppState (ChangeNotifier via provider): config, api, series cache
-  screens/                  One file per screen (see FEATURES.md); episode_detail_screen embeds ManualSearchView
+    app_state.dart          AppState (ChangeNotifier via provider): config, api, series cache, manual searches, queue count (badge), series images index
+  screens/                  One file per screen (see FEATURES.md); episode_detail_screen embeds ManualSearchView; activity_screen opens manual_import_screen; home_screen polls the queue count; wanted_screen has Missing/Cutoff tabs
   widgets/common.dart       Shared widgets and formatting helpers
-test/api_test.dart          URL normalization, failover, 401 handling, demo mode (MockClient)
+test/api_test.dart          URL normalization, failover, 401 handling, demo mode, ManualImport command (MockClient)
 ```
 
 - Data is handled as `Json` (`Map<String, dynamic>`) — no generated models. Updates send back the full object received from Sonarr, changing only the needed fields.
 - State: `provider` for `AppState`; screens own their local state / `AsyncBody` futures. Long-running work (manual search) lives in `AppState` so it survives navigation.
-- Demo mode: `SonarrApi` builds its HTTP client from `DemoServer().client()` (an `http/testing.dart` `MockClient`, shipped in the `http` package) when `config.isDemo`. `DemoServer` implements the same paths as Sonarr (`/api`, `/system/status`, `/series`, `/episode`, `/calendar`, `/queue`, `/history`, `/wanted/missing`, `/release`, `/command`, …) with mutable in-memory state, so toggling monitoring, deleting, adding or grabbing works during a session. Dates are relative to now, so the calendar is never empty.
+- Queue badge: `HomeScreen` (bottom nav) polls `AppState.refreshQueueCount()` every 30 s while foregrounded (`WidgetsBindingObserver`) and the queue tab refreshes it after each load; the Activity icon uses `Badge`.
+- Embedded series without images: `Poster` falls back to `AppState.seriesImages()` (id → images from `GET /series`, loaded once, reset on config change/disconnect).
+- Demo mode: `SonarrApi` builds its HTTP client from `DemoServer().client()` (an `http/testing.dart` `MockClient`, shipped in the `http` package) when `config.isDemo`. `DemoServer` implements the same paths as Sonarr (`/api`, `/system/status`, `/series`, `/episode`, `/calendar`, `/queue`, `/queue/status`, `/manualimport`, `/qualitydefinition`, `/language`, `/history`, `/wanted/missing`, `/wanted/cutoff`, `/release`, `/command`, …) with mutable in-memory state, so toggling monitoring, deleting, adding or grabbing works during a session. Dates are relative to now, so the calendar is never empty.
 - Dependencies: `http`, `shared_preferences`, `provider`, `cached_network_image`, `intl`.
 
 ## Commands
@@ -24,6 +26,8 @@ flutter pub get
 flutter analyze
 flutter test
 JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64 flutter build apk --debug
+# run on the emulator (AVD sonarr_pixel); if Gradle fails with "problem starting process flutter": (cd android && ./gradlew --stop)
+JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64 flutter run -d emulator-5554 --debug --no-resident
 ```
 
 ## CI/CD (`Jenkinsfile`)
