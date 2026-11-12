@@ -8,7 +8,7 @@ plugins {
     id("com.github.triplet.play")
 }
 
-// Release signing: CI writes android/key.properties and the keystore (see Jenkinsfile).
+// Release signing: CI writes android/key.properties and the keystore (see central release pipeline).
 val keystoreProperties = Properties()
 val keystorePropertiesFile = rootProject.file("key.properties")
 if (keystorePropertiesFile.exists()) {

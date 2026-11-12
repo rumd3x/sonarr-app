@@ -42,16 +42,16 @@ See [`.docs/FEATURES.md`](.docs/FEATURES.md) for the full list and the API endpo
 ## 🖼️ Screenshots
 
 <p align="center">
-  <img src=".docs/screenshots/01-setup.png" width="22%" alt="First-launch setup" />
-  <img src=".docs/screenshots/02-series.png" width="22%" alt="Series library" />
-  <img src=".docs/screenshots/03-series-detail.png" width="22%" alt="Series detail" />
-  <img src=".docs/screenshots/04-episode.png" width="22%" alt="Episode details" />
+  <img src="assets/images/screenshots/01-setup.png" width="22%" alt="First-launch setup" />
+  <img src="assets/images/screenshots/02-series.png" width="22%" alt="Series library" />
+  <img src="assets/images/screenshots/03-series-detail.png" width="22%" alt="Series detail" />
+  <img src="assets/images/screenshots/04-episode.png" width="22%" alt="Episode details" />
 </p>
 <p align="center">
-  <img src=".docs/screenshots/05-manual-search.png" width="22%" alt="Manual search" />
-  <img src=".docs/screenshots/06-calendar.png" width="22%" alt="Calendar" />
-  <img src=".docs/screenshots/07-activity.png" width="22%" alt="Download queue" />
-  <img src=".docs/screenshots/08-wanted.png" width="22%" alt="Wanted episodes" />
+  <img src="assets/images/screenshots/05-manual-search.png" width="22%" alt="Manual search" />
+  <img src="assets/images/screenshots/06-calendar.png" width="22%" alt="Calendar" />
+  <img src="assets/images/screenshots/07-activity.png" width="22%" alt="Download queue" />
+  <img src="assets/images/screenshots/08-wanted.png" width="22%" alt="Wanted episodes" />
 </p>
 
 <sub>Captured with demo data; show titles and posters are placeholders.</sub>
