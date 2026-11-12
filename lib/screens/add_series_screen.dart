@@ -193,6 +193,22 @@ class _AddSheetState extends State<_AddSheet> {
     }
   }
 
+  String _typeOf(Json s) {
+    final t = s['seriesType'];
+    return t is String && t.isNotEmpty ? t : 'standard';
+  }
+
+  // Sonarr v5 requires it; the lookup only lists the options in `seasonTypes`.
+  String? _seasonTypeOf(Json s) {
+    final t = s['seasonType'];
+    if (t is String && t.isNotEmpty) return t;
+    final list = s['seasonTypes'];
+    if (list is List && list.isNotEmpty && list.first is Map) {
+      return (list.first as Map)['type'] as String?;
+    }
+    return null;
+  }
+
   Future<void> _save() async {
     if (_root == null || _profile == null) return;
     setState(() {
@@ -202,6 +218,9 @@ class _AddSheetState extends State<_AddSheet> {
     try {
       await widget.api.addSeries({
         ...widget.series,
+        // Some Sonarr versions omit it in the lookup and reject an empty value.
+        'seriesType': _typeOf(widget.series),
+        'seasonType': _seasonTypeOf(widget.series),
         'rootFolderPath': _root,
         'qualityProfileId': _profile,
         'monitored': true,

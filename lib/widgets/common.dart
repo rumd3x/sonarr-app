@@ -128,40 +128,53 @@ class AsyncBody<T> extends StatefulWidget {
 }
 
 class AsyncBodyState<T> extends State<AsyncBody<T>> {
-  late Future<T> _future;
+  T? _data;
+  Object? _error;
+  var _loaded = false;
+  var _token = 0;
 
   @override
   void initState() {
     super.initState();
-    _future = _fetch();
+    reload();
   }
 
-  Future<T> _fetch() => widget.load(context.read<AppState>().api!);
-
-  Future<void> reload() async {
-    final f = _fetch();
-    setState(() => _future = f);
+  /// Reloads the data. A [silent] reload keeps showing the current content
+  /// (no spinner, errors ignored) — used for background refreshes.
+  Future<void> reload({bool silent = false}) async {
+    final token = ++_token;
+    if (!silent || !_loaded) {
+      setState(() {
+        _loaded = false;
+        _error = null;
+      });
+    }
     try {
-      await f;
-    } catch (_) {}
+      final data = await widget.load(context.read<AppState>().api!);
+      if (!mounted || token != _token) return;
+      setState(() {
+        _data = data;
+        _error = null;
+        _loaded = true;
+      });
+    } catch (e) {
+      if (!mounted || token != _token || (silent && _data != null)) return;
+      setState(() {
+        _error = e;
+        _loaded = true;
+      });
+    }
   }
 
   @override
-  Widget build(BuildContext context) => FutureBuilder<T>(
-    future: _future,
-    builder: (context, snap) {
-      if (snap.connectionState != ConnectionState.done) {
-        return const Center(child: CircularProgressIndicator());
-      }
-      if (snap.hasError) {
-        return ErrorView(error: snap.error!, onRetry: reload);
-      }
-      return RefreshIndicator(
-        onRefresh: reload,
-        child: widget.builder(context, snap.data as T),
-      );
-    },
-  );
+  Widget build(BuildContext context) {
+    if (!_loaded) return const Center(child: CircularProgressIndicator());
+    if (_error != null) return ErrorView(error: _error!, onRetry: reload);
+    return RefreshIndicator(
+      onRefresh: reload,
+      child: widget.builder(context, _data as T),
+    );
+  }
 }
 
 void toast(BuildContext context, String msg) {

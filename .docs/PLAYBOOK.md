@@ -103,6 +103,14 @@ Features built in the Sonarr app that a sibling app should replicate. Details of
 - **Demo mode** must get every new endpoint (`/queue/status`, `/manualimport`, `/qualitydefinition`, `/language`, `/wanted/cutoff`) plus a queue item that is `importBlocked`.
 - **Environment**: JDK 17 for Gradle; if a build fails with "problem starting process flutter", run `./gradlew --stop` in `android/` and retry.
 
+## 5c. Queue freshness fix (done first in the Lidarr app, then ported here)
+
+Symptom seen on a live server: the Activity queue and its badge stayed at 0 even after pull-to-refresh and only showed the new item after "Disconnect & clear data". Fixes (all together; it's not known which one alone solved it):
+- **Unmatched downloads**: `GET /queue` hides items the server could not match to the library unless asked (`includeUnknownSeriesItems=true`). Those are exactly the items that need manual import, so send it in `queue()` in `lib/services/api.dart`.
+- **No HTTP caching**: add `'Cache-Control': 'no-cache'` and `'Pragma': 'no-cache'` to the default request `headers` (guards against a reverse proxy/tunnel returning a stale response).
+- **Live queue tab**: `AsyncBodyState.reload({bool silent = false})` (`lib/widgets/common.dart`) keeps the current content while refreshing and ignores errors when it already has data; it replaces the `FutureBuilder`/`_future` approach with `_data/_error/_loaded` plus a `_token` to drop stale responses. The queue tab (`_QueueTab`, `activity_screen.dart`) takes `active` from `HomeScreen` (`ActivityScreen(active: _index == 2)`, so `_pages` can no longer be `const`), runs a 10 s `Timer.periodic` that does `reload(silent: true)` only while active, and also reloads silently when it becomes active (`didUpdateWidget`).
+- **Badge polling**: in `HomeScreen.didChangeAppLifecycleState` cancel the timer only on `paused` (not on `inactive`, which fires when the notification shade is pulled), restart on `resumed`.
+
 ## 6. Definition of done for a new app
 
 - [ ] `flutter analyze` clean, `flutter test` passes, release APK builds (JDK 17).

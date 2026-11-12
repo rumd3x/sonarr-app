@@ -42,7 +42,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState s) {
     if (s == AppLifecycleState.resumed) {
       _startPolling();
-    } else {
+    } else if (s == AppLifecycleState.paused) {
       _timer?.cancel();
     }
   }
@@ -54,19 +54,20 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     super.dispose();
   }
 
-  static const _pages = <Widget>[
-    SeriesListScreen(),
-    CalendarScreen(),
-    ActivityScreen(),
-    WantedScreen(),
-    MoreScreen(),
-  ];
-
   @override
   Widget build(BuildContext context) {
     final queue = context.select<AppState, int>((s) => s.queueCount);
     return Scaffold(
-      body: IndexedStack(index: _index, children: _pages),
+      body: IndexedStack(
+        index: _index,
+        children: [
+          const SeriesListScreen(),
+          const CalendarScreen(),
+          ActivityScreen(active: _index == 2),
+          const WantedScreen(),
+          const MoreScreen(),
+        ],
+      ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
         onDestinationSelected: (i) => setState(() => _index = i),
