@@ -43,6 +43,8 @@ class SonarrApi {
   Map<String, String> get headers => {
     'X-Api-Key': config.apiKey,
     'Accept': 'application/json',
+    'Cache-Control': 'no-cache',
+    'Pragma': 'no-cache',
     'Content-Type': 'application/json',
   };
 
@@ -231,6 +233,7 @@ class SonarrApi {
         'pageSize': 100,
         'includeSeries': true,
         'includeEpisode': true,
+        'includeUnknownSeriesItems': true,
       },
     );
     return _list(r is Map ? r['records'] : r);
@@ -245,7 +248,14 @@ class SonarrApi {
     await _send(
       'DELETE',
       '/queue/$id',
-      query: {'removeFromClient': true, 'blocklist': blocklist},
+      query: {
+        'removeFromClient': true,
+        'blocklist': blocklist,
+        // Sonarr v5 replaced the two flags above with these (required there,
+        // ignored by older versions).
+        'removalMethod': 'removeFromClient',
+        'blocklistMethod': blocklist ? 'blocklistAndSearch' : 'doNotBlocklist',
+      },
     );
   }
 

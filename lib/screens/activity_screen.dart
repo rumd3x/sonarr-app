@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -8,7 +10,9 @@ import '../widgets/common.dart';
 import 'manual_import_screen.dart';
 
 class ActivityScreen extends StatelessWidget {
-  const ActivityScreen({super.key});
+  /// True while the Activity tab is the one being shown.
+  final bool active;
+  const ActivityScreen({super.key, this.active = false});
 
   @override
   Widget build(BuildContext context) => DefaultTabController(
@@ -23,13 +27,16 @@ class ActivityScreen extends StatelessWidget {
           ],
         ),
       ),
-      body: const TabBarView(children: [_QueueTab(), _HistoryTab()]),
+      body: TabBarView(
+        children: [_QueueTab(active: active), const _HistoryTab()],
+      ),
     ),
   );
 }
 
 class _QueueTab extends StatefulWidget {
-  const _QueueTab();
+  final bool active;
+  const _QueueTab({required this.active});
 
   @override
   State<_QueueTab> createState() => _QueueTabState();
@@ -41,6 +48,30 @@ class _QueueTabState extends State<_QueueTab>
 
   @override
   bool get wantKeepAlive => true;
+
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(const Duration(seconds: 10), (_) {
+      if (widget.active) _key.currentState?.reload(silent: true);
+    });
+  }
+
+  @override
+  void didUpdateWidget(_QueueTab old) {
+    super.didUpdateWidget(old);
+    if (widget.active && !old.active) {
+      _key.currentState?.reload(silent: true);
+    }
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
 
   Future<void> _remove(Json item) async {
     var blocklist = false;

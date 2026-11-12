@@ -24,7 +24,7 @@ Navigation: bottom bar with **Series · Calendar · Activity · Wanted · More**
 
 ## Add series (`add_series_screen.dart`)
 - Lookup by name or `tvdb:ID`; already-added results are marked.
-- Bottom sheet: root folder, quality profile, monitor mode, season folders, search for missing on add.
+- Bottom sheet: root folder, quality profile, monitor mode, season folders, search for missing on add. `seriesType` is sent as `standard` when the lookup result doesn't include it (Sonarr rejects it empty). On Sonarr v5 `seasonType` is also required: the first entry of the lookup's `seasonTypes` (Aired Order, `official`) is sent.
 - `GET /series/lookup`, `GET /rootfolder`, `GET /qualityprofile`, `POST /series`
 
 ## Episode detail (`episode_detail_screen.dart`)
@@ -47,7 +47,8 @@ Opened by tapping an episode (series detail, Calendar, Wanted); the manual-searc
 - `GET /calendar?includeSeries=true`
 
 ## Activity (`activity_screen.dart`)
-- **Queue:** progress, status, size, time left, download client; remove with optional blocklist.
+- **Queue:** progress, status, size, time left, download client; remove with optional blocklist (`DELETE /queue/{id}` sends `removeFromClient`+`blocklist` for v3/v4 and `removalMethod=removeFromClient`+`blocklistMethod=blocklistAndSearch|doNotBlocklist`, required by v5). It refreshes silently (no spinner) every 10 s while the Activity tab is shown and each time the tab is selected; pull-to-refresh still works.
+- Requests send `Cache-Control: no-cache`; `GET /queue` uses `includeUnknownSeriesItems=true` so downloads Sonarr could not match to a series (the ones needing manual import) are listed.
 - **Manual import button:** a queue item waiting for user action shows a `person_search` button immediately left of the "X" (`needsManualImport()` in `manual_import_screen.dart`): it has a `downloadId` and `trackedDownloadState` is `importBlocked`, or `importPending`/`importFailed` with `trackedDownloadStatus` `warning`. It opens the manual import screen and reloads the queue when the import was started.
 - **History:** grab/import/failure/delete/rename events for the episode, with release title, quality, indexer and download client.
 - **Search:** manual search (below), embedded as `ManualSearchView`.
