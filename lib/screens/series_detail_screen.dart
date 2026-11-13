@@ -318,13 +318,23 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
         icon: Icon(seasonMonitored ? Icons.bookmark : Icons.bookmark_border),
         onPressed: () => _toggleSeason(number, !seasonMonitored),
       ),
-      trailing: IconButton(
-        tooltip: 'Search season',
-        icon: const Icon(Icons.search),
-        onPressed: () => _run(
-          () => _api.searchSeason(_series['id'] as int, number),
-          'Season search started',
-        ),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SeasonManualSearchButton(
+            seriesId: _series['id'] as int,
+            seasonNumber: number,
+            seriesTitle: '${_series['title']}',
+          ),
+          IconButton(
+            tooltip: 'Search season',
+            icon: const Icon(Icons.search),
+            onPressed: () => _run(
+              () => _api.searchSeason(_series['id'] as int, number),
+              'Season search started',
+            ),
+          ),
+        ],
       ),
       children: [for (final e in eps) _episodeTile(e)],
     );

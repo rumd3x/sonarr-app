@@ -83,9 +83,12 @@ class SonarrApi {
     for (final base in _bases) {
       try {
         final v = await _version(base);
-        final uri = Uri.parse(
-          '$base/api/$v$path',
-        ).replace(queryParameters: query?.map((k, val) => MapEntry(k, '$val')));
+        final uri = Uri.parse('$base/api/$v$path').replace(
+          queryParameters: query?.map(
+            (k, val) =>
+                MapEntry(k, val is List ? [for (final e in val) '$e'] : '$val'),
+          ),
+        );
         final req = http.Request(method, uri)..headers.addAll(headers);
         if (body != null) req.body = jsonEncode(body);
         final res = await http.Response.fromStream(
@@ -158,9 +161,13 @@ class SonarrApi {
     await _send(
       'GET',
       '/episode',
-      query: {'seriesId': seriesId, 'includeEpisodeFile': true},
+      query: {
+        'seriesId': seriesId,
+        'includeEpisodeFile': true,
+        'includeSubresources': ['episodeFile'],
+      },
     ),
-  );
+  ).map(_normalizeEpisode).toList();
 
   Future<Json> updateEpisode(Json body) async =>
       Json.from(await _send('PUT', '/episode/${body['id']}', body: body));
@@ -173,9 +180,10 @@ class SonarrApi {
         'start': start.toUtc().toIso8601String(),
         'end': end.toUtc().toIso8601String(),
         'includeSeries': true,
+        'includeSubresources': ['series', 'episodeFile'],
       },
     ),
-  );
+  ).map(_normalizeEpisode).toList();
 
   // ---- Episode files / history ----
   Future<void> deleteEpisodeFile(int id) async {
@@ -197,22 +205,91 @@ class SonarrApi {
     return _list(r is Map ? r['records'] : r);
   }
 
-  Future<Json> episodeById(int id) async => Json.from(
-    await _send('GET', '/episode/$id', query: {'includeEpisodeFile': true}),
+  Future<Json> episodeById(int id) async => _normalizeEpisode(
+    Json.from(
+      await _send('GET', '/episode/$id', query: {'includeEpisodeFile': true}),
+    ),
   );
 
   // ---- Manual search ----
   // Indexer queries can take minutes, so use a generous timeout.
   static const releaseTimeout = Duration(minutes: 5);
 
-  Future<List<Json>> releases(int episodeId) async => _list(
-    await _send(
-      'GET',
-      '/release',
-      query: {'episodeId': episodeId},
-      timeout: releaseTimeout,
-    ),
-  );
+  Future<List<Json>> releases(int episodeId) =>
+      _releases({'episodeId': episodeId});
+
+  /// Interactive search for a whole season (season packs and single episodes).
+  Future<List<Json>> seasonReleases(int seriesId, int seasonNumber) =>
+      _releases({'seriesId': seriesId, 'seasonNumber': seasonNumber});
+
+  Future<List<Json>> _releases(Map<String, dynamic> query) async => _list(
+    await _send('GET', '/release', query: query, timeout: releaseTimeout),
+  ).map(_flattenRelease).toList();
+
+  /// Newer Sonarr versions nest the release under `release`, the verdict under
+  /// `decision` and the quality under `parsedInfo`; older ones return it flat.
+  /// Normalizes both into the flat shape the UI reads.
+  static Json _flattenRelease(Json r) {
+    final nested = r['release'];
+    if (nested is! Map) return r;
+    final decision = r['decision'];
+    final parsed = r['parsedInfo'];
+    return {
+      ...r,
+      ...Json.from(nested),
+      if (parsed is Map && parsed['quality'] != null)
+        'quality': parsed['quality'],
+      if (decision is Map) ...{
+        'rejected': decision['rejected'] == true,
+        'rejections': [
+          for (final x in decision['rejections'] as List? ?? [])
+            x is Map ? x['message'] : x,
+        ],
+      },
+    };
+  }
+
+  /// v5 replaced `audioCodec`/`audioChannels`/`subtitles` in `mediaInfo` with
+  /// `audioStreams`/`subtitleStreams`; fill the old keys the UI reads.
+  static Json _normalizeEpisode(Json e) {
+    final file = e['episodeFile'];
+    final media = file is Map ? file['mediaInfo'] : null;
+    if (media is! Map || media['audioCodec'] != null) return e;
+    final audio = (media['audioStreams'] as List? ?? []).whereType<Map>();
+    final subs = (media['subtitleStreams'] as List? ?? []).whereType<Map>();
+    final langs = {
+      for (final s in subs)
+        if ('${s['language'] ?? ''}'.isNotEmpty) '${s['language']}',
+    };
+    return {
+      ...e,
+      'episodeFile': {
+        ...Json.from(file as Map),
+        'mediaInfo': {
+          ...Json.from(media),
+          if (audio.isNotEmpty) ...{
+            'audioCodec': audio.first['codec'],
+            'audioChannels': audio.first['channels'],
+          },
+          if (langs.isNotEmpty) 'subtitles': langs.join(' / '),
+        },
+      },
+    };
+  }
+
+  /// v5 renamed `sizeleft`/`timeleft` and replaced `episode` with `episodes`.
+  static Json _normalizeQueueItem(Json q) {
+    final eps = q['episodes'];
+    return {
+      ...q,
+      if (q['sizeleft'] == null && q['sizeLeft'] != null)
+        'sizeleft': q['sizeLeft'],
+      if (q['timeleft'] == null && q['timeLeft'] != null)
+        'timeleft': q['timeLeft'],
+      if (q['episode'] == null && eps is List && eps.isNotEmpty)
+        'episode': eps.first,
+    };
+  }
 
   Future<void> grabRelease(String guid, int indexerId) async {
     await _send(
@@ -234,9 +311,10 @@ class SonarrApi {
         'includeSeries': true,
         'includeEpisode': true,
         'includeUnknownSeriesItems': true,
+        'includeSubresources': ['series', 'episodes'],
       },
     );
-    return _list(r is Map ? r['records'] : r);
+    return _list(r is Map ? r['records'] : r).map(_normalizeQueueItem).toList();
   }
 
   Future<int> queueCount() async {
@@ -279,7 +357,10 @@ class SonarrApi {
     final hasFolder = folder != null && folder.trim().isNotEmpty;
     if (downloadId != null && downloadId.isNotEmpty) {
       try {
-        final r = await fetch({'downloadId': downloadId});
+        final r = await fetch({
+          'downloadId': downloadId,
+          'downloadIds': [downloadId],
+        });
         if (r.isNotEmpty || !hasFolder) return r;
       } on ApiException {
         if (!hasFolder) rethrow;
@@ -312,6 +393,7 @@ class SonarrApi {
         'sortDirection': 'descending',
         'includeSeries': true,
         'includeEpisode': true,
+        'includeSubresources': ['series', 'episode'],
       },
     );
     return _list(r is Map ? r['records'] : r);
@@ -335,9 +417,12 @@ class SonarrApi {
         'sortDirection': 'descending',
         'monitored': true,
         'includeSeries': true,
+        'includeSubresources': kind == 'missing'
+            ? ['series']
+            : ['series', 'episodeFile'],
       },
     );
-    return _list(r is Map ? r['records'] : r);
+    return _list(r is Map ? r['records'] : r).map(_normalizeEpisode).toList();
   }
 
   // ---- Commands ----

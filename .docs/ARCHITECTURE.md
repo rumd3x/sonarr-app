@@ -8,9 +8,9 @@ lib/
     demo_client.dart        DemoServer: in-memory fake Sonarr (MockClient) behind "Try demo"; ServerConfig.demo selects it
     api.dart                SonarrApi: HTTP client, failover, version detection, endpoints
     app_state.dart          AppState (ChangeNotifier via provider): config, api, series cache, manual searches, queue count (badge), series images index
-  screens/                  One file per screen (see FEATURES.md); episode_detail_screen embeds ManualSearchView; activity_screen opens manual_import_screen; home_screen polls the queue count; wanted_screen has Missing/Cutoff tabs
+  screens/                  One file per screen (see FEATURES.md); episode_detail_screen embeds ManualSearchView (episode); series_detail_screen opens SeasonSearchScreen (same view, per season); activity_screen opens manual_import_screen; home_screen polls the queue count; wanted_screen has Missing/Cutoff tabs
   widgets/common.dart       Shared widgets and formatting helpers
-test/api_test.dart          URL normalization, failover, 401 handling, demo mode, ManualImport command (MockClient)
+test/api_test.dart          URL normalization, failover, 401 handling, demo mode, ManualImport command, v3/v5 release and list normalization, season releases (MockClient)
 ```
 
 - Data is handled as `Json` (`Map<String, dynamic>`) — no generated models. Updates send back the full object received from Sonarr, changing only the needed fields.
@@ -19,6 +19,16 @@ test/api_test.dart          URL normalization, failover, 401 handling, demo mode
 - Embedded series without images: `Poster` falls back to `AppState.seriesImages()` (id → images from `GET /series`, loaded once, reset on config change/disconnect).
 - Demo mode: `SonarrApi` builds its HTTP client from `DemoServer().client()` (an `http/testing.dart` `MockClient`, shipped in the `http` package) when `config.isDemo`. `DemoServer` implements the same paths as Sonarr (`/api`, `/system/status`, `/series`, `/episode`, `/calendar`, `/queue`, `/queue/status`, `/manualimport`, `/qualitydefinition`, `/language`, `/history`, `/wanted/missing`, `/wanted/cutoff`, `/release`, `/command`, …) with mutable in-memory state, so toggling monitoring, deleting, adding or grabbing works during a session. Dates are relative to now, so the calendar is never empty.
 - Dependencies: `http`, `shared_preferences`, `provider`, `cached_network_image`, `intl`.
+
+## Sonarr v3 / v5 compatibility
+Always support both (see PREMISES.md for the spec links). Handled today in `SonarrApi`:
+- `GET /release`: v5 nests each item as `release` / `decision` / `parsedInfo`; `_flattenRelease` flattens it (rejections become message strings). Season search uses `seriesId` + `seasonNumber` on both versions.
+- List endpoints (`/queue`, `/history`, `/calendar`, `/episode`, `/wanted/*`): v5 only embeds `series`/`episode`/`episodes`/`episodeFile` when asked via `includeSubresources` (repeated query key); we send it together with the v3 `include*` flags. Query values that are `List`s are sent as repeated keys.
+- `/queue`: v5 `sizeLeft`, `timeLeft`, `episodes[]` → normalized to `sizeleft`, `timeleft`, `episode`. `DELETE /queue/{id}` sends both flag sets (`removeFromClient`/`blocklist` and `removalMethod`/`blocklistMethod`).
+- `mediaInfo`: v5 `audioStreams`/`subtitleStreams` → normalized to `audioCodec`/`audioChannels`/`subtitles`.
+- `/manualimport`: sends `downloadId` (v3) and `downloadIds` (v5).
+- Other v5 differences with no current impact: `languageProfileId` removed from series, `seasonType` required when adding a series, `releaseType` gained `multiSeasonPack`, `/qualitydefinition` lost `min/max/preferredSize`, `/system/status` lost `sqliteVersion`.
+- Gotcha: hot reload keeps old generic types of long-lived objects (e.g. `AppState.manualSearches`); use a hot restart after changing them.
 
 ## Commands
 ```

@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../services/api.dart';
 import '../services/app_state.dart';
 import '../screens/episode_detail_screen.dart';
+import '../screens/manual_search_screen.dart';
 
 String? imageUrl(SonarrApi api, Json item, [String type = 'poster']) {
   final images = item['images'];
@@ -229,6 +230,52 @@ class ManualSearchButton extends StatelessWidget {
     return IconButton(
       tooltip: 'Manual search',
       onPressed: () => openEpisode(context, episode, seriesTitle, tab: 2),
+      icon: running
+          ? const SizedBox(
+              width: 18,
+              height: 18,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : Badge(
+              isLabelVisible: ready,
+              smallSize: 8,
+              child: const Icon(Icons.manage_search, size: 22),
+            ),
+    );
+  }
+}
+
+/// Opens the interactive (manual) search for a whole season.
+class SeasonManualSearchButton extends StatelessWidget {
+  final int seriesId;
+  final int seasonNumber;
+  final String seriesTitle;
+  const SeasonManualSearchButton({
+    super.key,
+    required this.seriesId,
+    required this.seasonNumber,
+    required this.seriesTitle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final search = context
+        .watch<AppState>()
+        .manualSearches[AppState.seasonSearchKey(seriesId, seasonNumber)];
+    final running = search?.status == ManualSearchStatus.running;
+    final ready = search?.status == ManualSearchStatus.done;
+    return IconButton(
+      tooltip: 'Manual search season',
+      onPressed: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => SeasonSearchScreen(
+            seriesId: seriesId,
+            seasonNumber: seasonNumber,
+            seriesTitle: seriesTitle,
+          ),
+        ),
+      ),
       icon: running
           ? const SizedBox(
               width: 18,
