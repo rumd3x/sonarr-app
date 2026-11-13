@@ -5,24 +5,77 @@ import '../services/api.dart';
 import '../services/app_state.dart';
 import '../widgets/common.dart';
 
-/// Interactive search for an episode, meant to be embedded in the episode
-/// detail screen. The search runs in [AppState] (not here), so it keeps going
-/// if the user leaves the screen, and it only starts when the user asks.
+/// Interactive search for an episode or a season, meant to be embedded in a
+/// screen. The search runs in [AppState] (not here), so it keeps going if the
+/// user leaves the screen, and it only starts when the user asks.
+/// For an episode pass [episodeId]; for a season pass [seriesId] and
+/// [seasonNumber].
 class ManualSearchView extends StatefulWidget {
-  final int episodeId;
+  final int? episodeId;
+  final int? seriesId;
+  final int? seasonNumber;
   final String label;
   const ManualSearchView({
     super.key,
-    required this.episodeId,
+    this.episodeId,
+    this.seriesId,
+    this.seasonNumber,
     required this.label,
-  });
+  }) : assert(episodeId != null || (seriesId != null && seasonNumber != null));
 
   @override
   State<ManualSearchView> createState() => _ManualSearchViewState();
 }
 
+/// Full screen wrapper for the manual search of a season.
+class SeasonSearchScreen extends StatelessWidget {
+  final int seriesId;
+  final int seasonNumber;
+  final String seriesTitle;
+  const SeasonSearchScreen({
+    super.key,
+    required this.seriesId,
+    required this.seasonNumber,
+    required this.seriesTitle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final season = seasonNumber == 0 ? 'Specials' : 'Season $seasonNumber';
+    return Scaffold(
+      appBar: AppBar(
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(season),
+            Text(seriesTitle, style: Theme.of(context).textTheme.labelSmall),
+          ],
+        ),
+      ),
+      body: ManualSearchView(
+        seriesId: seriesId,
+        seasonNumber: seasonNumber,
+        label: '$seriesTitle · $season',
+      ),
+    );
+  }
+}
+
 class _ManualSearchViewState extends State<ManualSearchView> {
   bool _hideRejected = true;
+
+  Object get _key => widget.episodeId != null
+      ? widget.episodeId!
+      : AppState.seasonSearchKey(widget.seriesId!, widget.seasonNumber!);
+
+  void _start({bool restart = false}) => context.read<AppState>().manualSearch(
+    _key,
+    widget.label,
+    restart: restart,
+    seriesId: widget.seriesId,
+    seasonNumber: widget.seasonNumber,
+  );
+
   final Set<String> _grabbing = {};
   final Set<String> _grabbed = {};
 
@@ -66,7 +119,7 @@ class _ManualSearchViewState extends State<ManualSearchView> {
   @override
   Widget build(BuildContext context) {
     final state = context.watch<AppState>();
-    final search = state.manualSearches[widget.episodeId];
+    final search = state.manualSearches[_key];
     final running =
         search == null || search.status == ManualSearchStatus.running;
     final all = search?.releases ?? const <Json>[];
@@ -100,11 +153,7 @@ class _ManualSearchViewState extends State<ManualSearchView> {
                 icon: const Icon(Icons.refresh),
                 onPressed: search == null || running
                     ? null
-                    : () => state.manualSearch(
-                        widget.episodeId,
-                        widget.label,
-                        restart: true,
-                      ),
+                    : () => _start(restart: true),
               ),
             ],
           ),
@@ -119,16 +168,15 @@ class _ManualSearchViewState extends State<ManualSearchView> {
                       children: [
                         const Icon(Icons.manage_search, size: 56),
                         const SizedBox(height: 12),
-                        const Text(
-                          'Search all indexers for releases of this episode.',
+                        Text(
+                          widget.episodeId != null
+                              ? 'Search all indexers for releases of this episode.'
+                              : 'Search all indexers for releases of this season.',
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 16),
                         FilledButton.icon(
-                          onPressed: () => state.manualSearch(
-                            widget.episodeId,
-                            widget.label,
-                          ),
+                          onPressed: () => _start(),
                           icon: const Icon(Icons.search),
                           label: const Text('Search indexers'),
                         ),
@@ -162,11 +210,7 @@ class _ManualSearchViewState extends State<ManualSearchView> {
               : search.status == ManualSearchStatus.failed
               ? ErrorView(
                   error: search.error!,
-                  onRetry: () => state.manualSearch(
-                    widget.episodeId,
-                    widget.label,
-                    restart: true,
-                  ),
+                  onRetry: () => _start(restart: true),
                 )
               : releases.isEmpty
               ? EmptyView(

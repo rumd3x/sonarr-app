@@ -9,6 +9,10 @@
 - **URL failover:** every request tries the last working URL first, then the other one. Only network failures trigger failover; HTTP errors (e.g. 401) do not.
 - **Auth:** API key sent as `X-Api-Key` header; image URLs served by Sonarr use the `apikey` query parameter.
 - **API version:** detected at runtime via `GET /api` (`current` field, e.g. `v3`, `v5`), defaulting to `v3`. API reference: https://sonarr.tv/docs/api/
+- **Sonarr v3 and v5 compatibility (mandatory directive):** every feature must work on **both** API versions, in the requests **and** in the response mapping. Before adding or changing an endpoint, compare its contract in both specs and make the code accept both shapes (normalize in `SonarrApi`, keeping the UI on one flat shape; add tests for both; keep `DemoServer` working). Known v3→v5 differences are listed in [ARCHITECTURE.md](ARCHITECTURE.md#sonarr-v3--v5-compatibility). Contracts (OpenAPI):
+  - Docs UI (v5 default, v3 selectable): https://sonarr.tv/docs/api/ (`#v5`, `#v3`)
+  - v5 spec: https://raw.githubusercontent.com/Sonarr/Sonarr/develop/src/Sonarr.Api.V5/openapi.json
+  - v3 spec: https://raw.githubusercontent.com/Sonarr/Sonarr/main/src/Sonarr.Api.V3/openapi.json
 - **Cleartext HTTP is allowed** (`usesCleartextTraffic`), because Sonarr is commonly reached over LAN.
 - **Theme:** Material 3, dark by default, seed colour `#35C5F4`.
 - **Not affiliated** with the Sonarr project; the app says so in the More screen.

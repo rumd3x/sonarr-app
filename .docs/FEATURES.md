@@ -17,7 +17,7 @@ Navigation: bottom bar with **Series · Calendar · Activity · Wanted · More**
 ## Series detail (`series_detail_screen.dart`)
 - Fanart header, chips (year, network, status, runtime, episodes, size on disk), overview, path.
 - Monitor/unmonitor series, per-season and per-episode.
-- Search: whole series, a season, or a single episode (automatic). Refresh & scan. Delete (optionally with files).
+- Search: whole series, a season, or a single episode (automatic). Each season row also has a **manual search** button (spinner while running, badge when results are ready) that opens the interactive release search for the season. Refresh & scan. Delete (optionally with files).
 - **Manual search** per episode, and **episode detail** (tap an episode name): see below. Also reachable from Wanted and Calendar.
 - Episode rows show file status, air date and quality.
 - `GET/PUT/DELETE /series/{id}`, `GET /episode?seriesId=&includeEpisodeFile=true`, `PUT /episode/{id}`, `POST /command` (`SeriesSearch`, `SeasonSearch`, `EpisodeSearch`, `RefreshSeries`)
@@ -39,7 +39,9 @@ Opened by tapping an episode (series detail, Calendar, Wanted); the manual-searc
 - Interactive release search for an episode: lists releases from all indexers with quality, size, age, indexer, seeders/leechers (torrent) or usenet, languages, custom-format score, and rejection reasons.
 - Rejected releases are hidden by default (toggle); grabbing a rejected one asks for confirmation. Grab sends it to the download client.
 - **Long-running by design:** indexer queries can take minutes. The request uses a 5-minute timeout (`SonarrApi.releaseTimeout`) and runs inside `AppState.manualSearch`, not in the screen, so the user can leave and come back. The episode's search button shows a spinner while running and a badge when results are ready. Results are kept in memory until restart/disconnect; "Search again" re-runs.
-- `GET /release?episodeId=`, `POST /release` (`guid`, `indexerId`)
+- `GET /release?episodeId=` (episode) or `GET /release?seriesId=&seasonNumber=` (season; same list UI, results kept in `AppState.manualSearches` under `AppState.seasonSearchKey`), `POST /release` (`guid`, `indexerId`)
+- Response shape: newer Sonarr nests each item (`release`, `decision`, `parsedInfo`); `SonarrApi.releases` flattens it (title/size/indexer/age/seeders from `release`, quality from `parsedInfo.quality`, `rejected`/`rejections[].message` from `decision`) and still accepts the older flat shape.
+- **v3/v5 compatibility:** list calls send both the v3 `include*` flags and the v5 `includeSubresources` array (`series`, `episode`, `episodes`, `episodeFile`; repeated query keys), since v5 omits `series`/`episode` otherwise. v5 queue fields (`sizeLeft`, `timeLeft`, `episodes`) and `mediaInfo` (`audioStreams`, `subtitleStreams`) are normalized to the v3 keys the UI reads. `/manualimport` sends both `downloadId` and `downloadIds`.
 
 ## Calendar (`calendar_screen.dart`)
 - Episodes from 3 days ago to 30 days ahead, grouped by day ("Today" highlighted).
@@ -59,7 +61,8 @@ Opened by tapping an episode (series detail, Calendar, Wanted); the manual-searc
 - Interactive release search for an episode: lists releases from all indexers with quality, size, age, indexer, seeders/leechers (torrent) or usenet, languages, custom-format score, and rejection reasons.
 - Rejected releases are hidden by default (toggle); grabbing a rejected one asks for confirmation. Grab sends it to the download client.
 - **Long-running by design:** indexer queries can take minutes. The request uses a 5-minute timeout (`SonarrApi.releaseTimeout`) and runs inside `AppState.manualSearch`, not in the screen, so the user can leave and come back. The episode's search button shows a spinner while running and a badge when results are ready. Results are kept in memory until restart/disconnect; "Search again" re-runs.
-- `GET /release?episodeId=`, `POST /release` (`guid`, `indexerId`)
+- `GET /release?episodeId=` (episode) or `GET /release?seriesId=&seasonNumber=` (season; same list UI, results kept in `AppState.manualSearches` under `AppState.seasonSearchKey`), `POST /release` (`guid`, `indexerId`)
+- Response shape: newer Sonarr nests each item (`release`, `decision`, `parsedInfo`); `SonarrApi.releases` flattens it (title/size/indexer/age/seeders from `release`, quality from `parsedInfo.quality`, `rejected`/`rejections[].message` from `decision`) and still accepts the older flat shape.
 
 ## Calendar (`calendar_screen.dart`)
 - Episodes from 3 days ago to 30 days ahead, grouped by day ("Today" highlighted).

@@ -470,7 +470,11 @@ class DemoServer {
       case '/release':
         if (m == 'POST') return _json({});
         await Future<void>.delayed(const Duration(milliseconds: 900));
-        return _json(_releases(int.tryParse(q['episodeId'] ?? '') ?? 0));
+        final season = int.tryParse(q['seasonNumber'] ?? '');
+        final id = season != null
+            ? 100000 + (int.tryParse(q['seriesId'] ?? '') ?? 0) * 100 + season
+            : int.tryParse(q['episodeId'] ?? '') ?? 0;
+        return _json(_releases(id));
       case '/manualimport':
         return _json(_manualFiles);
       case '/qualitydefinition':

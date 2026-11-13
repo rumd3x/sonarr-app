@@ -11,34 +11,43 @@ enum ManualSearchStatus { running, done, failed }
 /// A manual (interactive) release search that runs in the background, so the
 /// user can leave the screen and come back to the results later.
 class ManualSearch {
-  final int episodeId;
+  final Object key;
   final String label;
   ManualSearchStatus status = ManualSearchStatus.running;
   List<Json> releases = [];
   Object? error;
-  ManualSearch(this.episodeId, this.label);
+  ManualSearch(this.key, this.label);
 }
 
 class AppState extends ChangeNotifier {
-  final Map<int, ManualSearch> manualSearches = {};
+  /// Keyed by episode id (int) or by [seasonSearchKey] (String).
+  final Map<Object, ManualSearch> manualSearches = {};
 
-  /// Starts (or returns the existing) manual search for an episode.
+  static String seasonSearchKey(int seriesId, int season) =>
+      's$seriesId:$season';
+
+  /// Starts (or returns the existing) manual search. For an episode [key] is
+  /// the episode id; for a season pass [seasonSearchKey] plus [seriesId] and
+  /// [seasonNumber].
   ManualSearch manualSearch(
-    int episodeId,
+    Object key,
     String label, {
     bool restart = false,
+    int? seriesId,
+    int? seasonNumber,
   }) {
-    final existing = manualSearches[episodeId];
+    final existing = manualSearches[key];
     if (existing != null &&
         !restart &&
         existing.status != ManualSearchStatus.failed) {
       return existing;
     }
-    final search = ManualSearch(episodeId, label);
-    manualSearches[episodeId] = search;
+    final search = ManualSearch(key, label);
+    manualSearches[key] = search;
     final client = api!;
-    client
-        .releases(episodeId)
+    (seasonNumber != null
+            ? client.seasonReleases(seriesId!, seasonNumber)
+            : client.releases(key as int))
         .then((r) {
           search.releases = r;
           search.status = ManualSearchStatus.done;
@@ -52,8 +61,8 @@ class AppState extends ChangeNotifier {
     return search;
   }
 
-  void clearManualSearch(int episodeId) {
-    manualSearches.remove(episodeId);
+  void clearManualSearch(Object key) {
+    manualSearches.remove(key);
     notifyListeners();
   }
 
