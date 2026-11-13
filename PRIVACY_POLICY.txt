@@ -1,0 +1,89 @@
+PRIVACY POLICY - Sonarr (unofficial) for Android
+Package: com.rumd3x.sonarr
+Last updated: 2026-11-13
+
+1. ABOUT THIS APP
+
+Sonarr (unofficial) is a mobile client that lets you manage your own
+Sonarr server from your Android phone. It is an independent project and is
+not affiliated with, endorsed by or sponsored by the Sonarr project.
+
+2. SUMMARY
+
+We do not collect, store, sell, share or transmit your personal data to
+us or to any third party. The app has no accounts, no login, no backend
+of its own, no analytics, no advertising and no crash reporting.
+
+3. INFORMATION STORED ON YOUR DEVICE
+
+The following is kept only in the app's private storage on your device
+and never leaves it, except as described in section 4:
+
+- The primary URL, the optional secondary URL and the API key of your
+  Sonarr server, which you enter yourself.
+- A small cache of your series list, used to show the library faster.
+- Cached poster and banner images downloaded from your server.
+- A marker indicating that demo mode is active, when you use it.
+
+You can erase all of this at any time with "Disconnect & clear data" in
+the More screen, or by clearing the app's data or uninstalling the app
+from Android settings.
+
+4. NETWORK COMMUNICATION
+
+The app connects only to the server addresses you configure. Requests
+(including your API key, sent in the X-Api-Key header or the apikey query
+parameter for images) go directly from your device to your own Sonarr
+server. We never receive them. Your Sonarr server may in turn contact
+other services (indexers, download clients, metadata providers, image
+hosts); this is controlled by your server and not by this app. Images
+may be loaded from the addresses your server provides.
+
+The app permits unencrypted HTTP connections because Sonarr servers are
+often reached over a local network. If you use HTTP outside a trusted
+network, your data may be visible to others on that network. We recommend
+HTTPS whenever possible.
+
+5. DEMO MODE
+
+Demo mode uses built-in sample data. In demo mode no data is sent to any
+server and no network connection to a Sonarr server is made.
+
+6. PERMISSIONS
+
+The app requests only the INTERNET permission, needed to reach your
+Sonarr server. It does not access your contacts, location, camera,
+microphone, photos, files or any other personal data.
+
+7. THIRD PARTIES
+
+The app contains no third-party analytics, advertising or tracking
+services, and shares no data with third parties.
+
+8. CHILDREN
+
+The app does not knowingly collect any information from anyone, including
+children under 13.
+
+9. SECURITY
+
+Data is kept in the app's private storage, which is protected by the
+Android operating system. You are responsible for protecting your device
+and your Sonarr server and API key.
+
+10. YOUR RIGHTS
+
+Because we hold none of your data, there is nothing for us to access,
+correct or delete. You control all data stored by the app on your device
+and can remove it at any time as described in section 3.
+
+11. CHANGES TO THIS POLICY
+
+This policy may be updated when the app changes. The latest version is
+kept in the app's source repository, and the "Last updated" date above
+will be changed accordingly.
+
+12. CONTACT
+
+Questions about this policy can be sent through the project's issue
+tracker at https://github.com/rumd3x/sonarr-app/issues
