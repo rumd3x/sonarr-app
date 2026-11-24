@@ -32,7 +32,7 @@
 | **Series detail** | Seasons & episodes, monitor toggles, automatic search, refresh, delete |
 | **Episode detail** | Details & file info, per-episode history, manual (interactive) search with long-running background queries |
 | **Add series** | Lookup by name or `tvdb:ID`, pick root folder, quality profile and monitor mode |
-| **Calendar** | Upcoming and recent episodes grouped by day |
+| **Calendar** | Swipeable month grid with episode air dates and a selected-day episode list |
 | **Activity** | Live download queue (remove/blocklist, badge with the item count on the nav bar), manual import for downloads waiting for user action, and history |
 | **Wanted** | Missing and cutoff unmet tabs, search one or all |
 | **More** | Server version, health checks, disk space, connection settings |

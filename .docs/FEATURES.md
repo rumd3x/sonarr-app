@@ -44,9 +44,10 @@ Opened by tapping an episode (series detail, Calendar, Wanted); the manual-searc
 - **v3/v5 compatibility:** list calls send both the v3 `include*` flags and the v5 `includeSubresources` array (`series`, `episode`, `episodes`, `episodeFile`; repeated query keys), since v5 omits `series`/`episode` otherwise. v5 queue fields (`sizeLeft`, `timeLeft`, `episodes`) and `mediaInfo` (`audioStreams`, `subtitleStreams`) are normalized to the v3 keys the UI reads. `/manualimport` sends both `downloadId` and `downloadIds`.
 
 ## Calendar (`calendar_screen.dart`)
-- Episodes from 3 days ago to 30 days ahead, grouped by day ("Today" highlighted).
-- Posters: series embedded in calendar/wanted episodes come with only an `id` (no `images`), so `Poster` looks the images up by id in the series list (`AppState.seriesImages()`, loaded once). `/MediaCover` can't be used directly: servers with authentication redirect it to the login page even with `apikey`; the `remoteUrl` from the series images is used instead.
-- `GET /calendar?includeSeries=true`
+- Sunday-first month grid opens on today. Use the arrows or swipe horizontally across the grid to move up to 12 months in either direction. The grid slides with each month change, selecting the first day of the destination month or today when you return to the current month.
+- Days with episodes are highlighted. Tap a date to see its episode cards or “Nothing scheduled.” The **Today** button appears whenever a different date is selected and jumps back to today. Tap a card to open episode details.
+- One `GET /calendar` request covers all 25 navigable months, from the first day of the earliest month up to the first day after the latest month. The refresh button reloads that range. Episodes are grouped by local date from `airDateUtc`. The API client sends `includeSeries=true` for v3 and `includeSubresources` for v5.
+- Calendar and Wanted episode cards use series artwork from `AppState.seriesImages()` when the embedded series has no images. They use the series image's `remoteUrl` because authenticated servers may redirect direct `/MediaCover` requests to login.
 
 ## Activity (`activity_screen.dart`)
 - **Queue:** progress, status, size, time left, download client; remove with optional blocklist (`DELETE /queue/{id}` sends `removeFromClient`+`blocklist` for v3/v4 and `removalMethod=removeFromClient`+`blocklistMethod=blocklistAndSearch|doNotBlocklist`, required by v5). It refreshes silently (no spinner) every 10 s while the Activity tab is shown and each time the tab is selected; pull-to-refresh still works.
@@ -63,11 +64,6 @@ Opened by tapping an episode (series detail, Calendar, Wanted); the manual-searc
 - **Long-running by design:** indexer queries can take minutes. The request uses a 5-minute timeout (`SonarrApi.releaseTimeout`) and runs inside `AppState.manualSearch`, not in the screen, so the user can leave and come back. The episode's search button shows a spinner while running and a badge when results are ready. Results are kept in memory until restart/disconnect; "Search again" re-runs.
 - `GET /release?episodeId=` (episode) or `GET /release?seriesId=&seasonNumber=` (season; same list UI, results kept in `AppState.manualSearches` under `AppState.seasonSearchKey`), `POST /release` (`guid`, `indexerId`)
 - Response shape: newer Sonarr nests each item (`release`, `decision`, `parsedInfo`); `SonarrApi.releases` flattens it (title/size/indexer/age/seeders from `release`, quality from `parsedInfo.quality`, `rejected`/`rejections[].message` from `decision`) and still accepts the older flat shape.
-
-## Calendar (`calendar_screen.dart`)
-- Episodes from 3 days ago to 30 days ahead, grouped by day ("Today" highlighted).
-- Posters: series embedded in calendar/wanted episodes come with only an `id` (no `images`), so `Poster` looks the images up by id in the series list (`AppState.seriesImages()`, loaded once). `/MediaCover` can't be used directly: servers with authentication redirect it to the login page even with `apikey`; the `remoteUrl` from the series images is used instead.
-- `GET /calendar?includeSeries=true`
 
 ## Activity (`activity_screen.dart`)
 - **Queue:** progress, status, size, time left, download client; remove with optional blocklist.
