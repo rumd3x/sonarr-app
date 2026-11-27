@@ -37,6 +37,8 @@ Opened by tapping an episode (series detail, Calendar, Wanted); the manual-searc
 ## Manual search (`manual_search_screen.dart`)
 - Starts only when the user taps "Search indexers" (never automatically, to avoid needless indexer queries).
 - Interactive release search for an episode: lists releases from all indexers with quality, size, age, indexer, seeders/leechers (torrent) or usenet, languages, custom-format score, and rejection reasons.
+- **Order by** sorts episode and season results by age, size, seeders, custom-format score or title. The initial order follows Sonarr.
+- Releases with an HTTP or HTTPS `infoUrl` have an **Open release info in browser** button next to Download. Demo mode includes a sample link to `example.com`.
 - Rejected releases are hidden by default (toggle); grabbing a rejected one asks for confirmation. Grab sends it to the download client.
 - **Long-running by design:** indexer queries can take minutes. The request uses a 5-minute timeout (`SonarrApi.releaseTimeout`) and runs inside `AppState.manualSearch`, not in the screen, so the user can leave and come back. The episode's search button shows a spinner while running and a badge when results are ready. Results are kept in memory until restart/disconnect; "Search again" re-runs.
 - `GET /release?episodeId=` (episode) or `GET /release?seriesId=&seasonNumber=` (season; same list UI, results kept in `AppState.manualSearches` under `AppState.seasonSearchKey`), `POST /release` (`guid`, `indexerId`)

@@ -66,7 +66,7 @@ void main() {
   test(
     'releases flattens the nested v5 shape and keeps the flat v3 one',
     () async {
-      SonarrApi apiReturning(String json) => SonarrApi(
+      SonarrApi apiReturning(String version, String json) => SonarrApi(
         const ServerConfig(
           primaryUrl: 'http://p',
           secondaryUrl: '',
@@ -74,12 +74,13 @@ void main() {
         ),
         client: MockClient(
           (r) async => r.url.path == '/api'
-              ? http.Response('{"current":"v3"}', 200)
+              ? http.Response('{"current":"$version"}', 200)
               : http.Response(json, 200),
         ),
       );
 
       final v5 = (await apiReturning(
+        'v5',
         jsonEncode([
           {
             'parsedInfo': {
@@ -93,6 +94,7 @@ void main() {
               'title': 'Show.S01',
               'size': 10,
               'protocol': 'torrent',
+              'infoUrl': 'https://example.com/v5-release',
             },
             'decision': {
               'rejected': true,
@@ -114,12 +116,15 @@ void main() {
       expect(v5['rejected'], true);
       expect(v5['rejections'], ['Not an upgrade']);
       expect(v5['customFormatScore'], 5);
+      expect(v5['infoUrl'], 'https://example.com/v5-release');
 
       final v3 = (await apiReturning(
+        'v3',
         jsonEncode([
           {
             'guid': 'g3',
             'title': 'Show.S01',
+            'infoUrl': 'https://example.com/v3-release',
             'rejected': true,
             'rejections': ['Not an upgrade'],
           },
@@ -127,6 +132,7 @@ void main() {
       ).releases(1)).single;
       expect(v3['title'], 'Show.S01');
       expect(v3['rejections'], ['Not an upgrade']);
+      expect(v3['infoUrl'], 'https://example.com/v3-release');
     },
   );
 

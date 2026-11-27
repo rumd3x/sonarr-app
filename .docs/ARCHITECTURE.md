@@ -18,11 +18,11 @@ test/api_test.dart          URL normalization, failover, 401 handling, demo mode
 - Queue badge: `HomeScreen` (bottom nav) polls `AppState.refreshQueueCount()` every 30 s while foregrounded (`WidgetsBindingObserver`) and the queue tab refreshes it after each load; polling pauses only on `paused` (not `inactive`) and restarts on `resumed`; the Activity icon uses `Badge`. `AsyncBodyState.reload(silent: true)` refreshes without a spinner (used by the queue tab, which `HomeScreen` tells when it is active).
 - Embedded series without images: `Poster` falls back to `AppState.seriesImages()` (id → images from `GET /series`, loaded once, reset on config change/disconnect).
 - Demo mode: `SonarrApi` builds its HTTP client from `DemoServer().client()` (an `http/testing.dart` `MockClient`, shipped in the `http` package) when `config.isDemo`. `DemoServer` implements the same paths as Sonarr (`/api`, `/system/status`, `/series`, `/episode`, `/calendar`, `/queue`, `/queue/status`, `/manualimport`, `/qualitydefinition`, `/language`, `/history`, `/wanted/missing`, `/wanted/cutoff`, `/release`, `/command`, …) with mutable in-memory state, so toggling monitoring, deleting, adding or grabbing works during a session. Dates are relative to now, so the calendar is never empty.
-- Dependencies: `http`, `shared_preferences`, `provider`, `cached_network_image`, `intl`.
+- Dependencies include `http`, `shared_preferences`, `provider`, `cached_network_image`, `intl` and `url_launcher` (opens release info URLs through Android).
 
 ## Sonarr v3 / v5 compatibility
 Always support both (see PREMISES.md for the spec links). Handled today in `SonarrApi`:
-- `GET /release`: v5 nests each item as `release` / `decision` / `parsedInfo`; `_flattenRelease` flattens it (rejections become message strings). Season search uses `seriesId` + `seasonNumber` on both versions.
+- `GET /release`: v5 nests each item as `release` / `decision` / `parsedInfo`. `_flattenRelease` moves `infoUrl` and other release fields to the top level and converts rejections to message strings. Season search uses `seriesId` + `seasonNumber` on both versions. The results view sorts locally and hands off HTTP(S) info URLs without attaching Sonarr request headers.
 - List endpoints (`/queue`, `/history`, `/calendar`, `/episode`, `/wanted/*`): v5 only embeds `series`/`episode`/`episodes`/`episodeFile` when asked via `includeSubresources` (repeated query key); we send it together with the v3 `include*` flags. Query values that are `List`s are sent as repeated keys.
 - `/queue`: v5 `sizeLeft`, `timeLeft`, `episodes[]` → normalized to `sizeleft`, `timeleft`, `episode`. `DELETE /queue/{id}` sends both flag sets (`removeFromClient`/`blocklist` and `removalMethod`/`blocklistMethod`).
 - `mediaInfo`: v5 `audioStreams`/`subtitleStreams` → normalized to `audioCodec`/`audioChannels`/`subtitles`.
@@ -51,7 +51,7 @@ Play Store package (applicationId/namespace): `com.rumd3x.sonarr`; Kotlin `MainA
 Source of truth lives in the repo and is pushed by `publishListing`:
 - `android/app/src/main/play/default-language.txt` (`en-US`) and `listings/en-US/{title,short-description,full-description}.txt` (limits: 30 / 80 / 4000 chars).
 - `listings/en-US/graphics/icon/icon.png` (512×512) and `graphics/feature-graphic/feature.png` (1024×500), generated from `assets/branding` by `python3 scripts/generate_play_assets.py` (needs Pillow). Re-run and commit after changing the branding.
-- Phone screenshots are **not** duplicated: the pipeline copies the first 8 files of `assets/images/screenshots/` (sorted by name) into `graphics/phone-screenshots/` (gitignored) right before `publishListing`. Keep them within Play limits (≤8, side ≥320, ≤2:1).
+- The pipeline copies up to eight files from `assets/images/screenshots/` in filename order into the gitignored `graphics/phone-screenshots/` before `publishListing`. Keep at most eight screenshots in the source directory and use the same set in the README. [Google Play phone screenshot requirements](https://support.google.com/googleplay/android-developer/answer/9866151?hl=en)
 - Release notes: from the `RELEASE_NOTES` job parameter into `release-notes/en-US/default.txt` (gitignored).
 - Jenkins defaults are safe for a brand-new app: track `internal`, status `draft`.
 - Changing listing texts/graphics = edit the files above and run the job; update this section if the layout changes.

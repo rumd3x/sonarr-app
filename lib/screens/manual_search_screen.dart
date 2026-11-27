@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../services/api.dart';
 import '../services/app_state.dart';
@@ -61,8 +62,45 @@ class SeasonSearchScreen extends StatelessWidget {
   }
 }
 
+enum _ReleaseOrder {
+  sonarr('Sonarr order'),
+  newest('Newest first'),
+  oldest('Oldest first'),
+  largest('Largest first'),
+  smallest('Smallest first'),
+  seeders('Most seeders'),
+  score('Highest custom format score'),
+  title('Title (A–Z)');
+
+  const _ReleaseOrder(this.label);
+  final String label;
+
+  static num _ageMinutes(Json release) =>
+      (release['ageMinutes'] as num?) ??
+      ((release['ageHours'] as num?) ?? ((release['age'] as num?) ?? 0) * 24) *
+          60;
+
+  int compare(Json a, Json b) => switch (this) {
+    sonarr => 0,
+    newest => _ageMinutes(a).compareTo(_ageMinutes(b)),
+    oldest => _ageMinutes(b).compareTo(_ageMinutes(a)),
+    largest => ((b['size'] as num?) ?? 0).compareTo((a['size'] as num?) ?? 0),
+    smallest => ((a['size'] as num?) ?? 0).compareTo((b['size'] as num?) ?? 0),
+    seeders => ((b['seeders'] as num?) ?? -1).compareTo(
+      (a['seeders'] as num?) ?? -1,
+    ),
+    score => ((b['customFormatScore'] as num?) ?? 0).compareTo(
+      (a['customFormatScore'] as num?) ?? 0,
+    ),
+    title => '${a['title'] ?? ''}'.toLowerCase().compareTo(
+      '${b['title'] ?? ''}'.toLowerCase(),
+    ),
+  };
+}
+
 class _ManualSearchViewState extends State<ManualSearchView> {
   bool _hideRejected = true;
+  _ReleaseOrder _order = _ReleaseOrder.sonarr;
 
   Object get _key => widget.episodeId != null
       ? widget.episodeId!
@@ -123,9 +161,15 @@ class _ManualSearchViewState extends State<ManualSearchView> {
     final running =
         search == null || search.status == ManualSearchStatus.running;
     final all = search?.releases ?? const <Json>[];
-    final releases = all
-        .where((r) => !_hideRejected || r['rejected'] != true)
+    final releases = all.indexed
+        .where((entry) => !_hideRejected || entry.$2['rejected'] != true)
         .toList();
+    if (_order != _ReleaseOrder.sonarr) {
+      releases.sort((a, b) {
+        final comparison = _order.compare(a.$2, b.$2);
+        return comparison == 0 ? a.$1.compareTo(b.$1) : comparison;
+      });
+    }
 
     return Column(
       children: [
@@ -140,6 +184,34 @@ class _ManualSearchViewState extends State<ManualSearchView> {
                       : '${releases.length} of ${all.length} releases',
                   style: Theme.of(context).textTheme.labelMedium,
                 ),
+              ),
+              PopupMenuButton<_ReleaseOrder>(
+                tooltip: 'Order by',
+                enabled: releases.isNotEmpty,
+                initialValue: _order,
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 8),
+                  child: SizedBox(
+                    height: 48,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.sort, size: 20),
+                        SizedBox(width: 4),
+                        Text('Order by'),
+                      ],
+                    ),
+                  ),
+                ),
+                onSelected: (order) => setState(() => _order = order),
+                itemBuilder: (context) => [
+                  for (final order in _ReleaseOrder.values)
+                    CheckedPopupMenuItem(
+                      value: order,
+                      checked: order == _order,
+                      child: Text(order.label),
+                    ),
+                ],
               ),
               IconButton(
                 tooltip: _hideRejected ? 'Show rejected' : 'Hide rejected',
@@ -222,12 +294,16 @@ class _ManualSearchViewState extends State<ManualSearchView> {
               : ListView.builder(
                   padding: const EdgeInsets.fromLTRB(12, 8, 12, 24),
                   itemCount: releases.length,
-                  itemBuilder: (_, i) => _ReleaseCard(
-                    release: releases[i],
-                    grabbing: _grabbing.contains('${releases[i]['guid']}'),
-                    grabbed: _grabbed.contains('${releases[i]['guid']}'),
-                    onGrab: () => _grab(releases[i]),
-                  ),
+                  itemBuilder: (_, i) {
+                    final release = releases[i].$2;
+                    final guid = '${release['guid']}';
+                    return _ReleaseCard(
+                      release: release,
+                      grabbing: _grabbing.contains(guid),
+                      grabbed: _grabbed.contains(guid),
+                      onGrab: () => _grab(release),
+                    );
+                  },
                 ),
         ),
       ],
@@ -253,9 +329,29 @@ class _ReleaseCard extends StatelessWidget {
     return '${(r['ageHours'] as num?)?.toInt() ?? 0}h';
   }
 
+  Uri? get _infoUrl {
+    final value = release['infoUrl'];
+    if (value is! String) return null;
+    final url = Uri.tryParse(value.trim());
+    if (url == null || !url.isScheme('http') && !url.isScheme('https')) {
+      return null;
+    }
+    return url.host.isEmpty ? null : url;
+  }
+
+  Future<void> _openInfo(BuildContext context, Uri url) async {
+    try {
+      if (await launchUrl(url, mode: LaunchMode.externalApplication)) return;
+    } on Exception {
+      // Show the same message if the platform refuses to open the URL.
+    }
+    if (context.mounted) toast(context, 'Could not open release info');
+  }
+
   @override
   Widget build(BuildContext context) {
     final r = release;
+    final infoUrl = _infoUrl;
     final rejected = r['rejected'] == true;
     final torrent = r['protocol'] == 'torrent';
     final quality = (r['quality'] as Map?)?['quality']?['name'];
@@ -315,6 +411,12 @@ class _ReleaseCard extends StatelessWidget {
                 ],
               ),
             ),
+            if (infoUrl != null)
+              IconButton(
+                tooltip: 'Open release info in browser',
+                icon: const Icon(Icons.open_in_new),
+                onPressed: () => _openInfo(context, infoUrl),
+              ),
             grabbing
                 ? const Padding(
                     padding: EdgeInsets.all(14),

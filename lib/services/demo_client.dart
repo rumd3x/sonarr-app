@@ -586,6 +586,7 @@ class DemoServer {
         'indexerId': 1,
         'indexer': 'Demo Indexer',
         'title': 'Sample.Release.${r.$1.replaceAll(' ', '.')}-DEMO',
+        if (i == 0) 'infoUrl': 'https://example.com/',
         'size': r.$3,
         'seeders': r.$4,
         'leechers': r.$4 ~/ 4,

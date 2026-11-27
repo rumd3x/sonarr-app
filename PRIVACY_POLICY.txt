@@ -1,6 +1,6 @@
 PRIVACY POLICY - Sonarr (unofficial) for Android
 Package: com.rumd3x.sonarr
-Last updated: 2026-11-13
+Last updated: 2026-11-27
 
 1. ABOUT THIS APP
 
@@ -39,6 +39,11 @@ other services (indexers, download clients, metadata providers, image
 hosts); this is controlled by your server and not by this app. Images
 may be loaded from the addresses your server provides.
 
+When you tap a release info button, the app passes the supplied web URL
+to Android to open in your browser. It does not attach your Sonarr API
+key or request headers. The destination site and your browser handle
+the resulting visit under their own privacy policies.
+
 The app permits unencrypted HTTP connections because Sonarr servers are
 often reached over a local network. If you use HTTP outside a trusted
 network, your data may be visible to others on that network. We recommend
@@ -46,8 +51,8 @@ HTTPS whenever possible.
 
 5. DEMO MODE
 
-Demo mode uses built-in sample data. In demo mode no data is sent to any
-server and no network connection to a Sonarr server is made.
+Demo mode serves sample data locally without connecting to a Sonarr
+server. You can open a sample release info link in your browser.
 
 6. PERMISSIONS
 
