@@ -51,6 +51,7 @@ Play Store package (applicationId/namespace): `com.rumd3x.sonarr`; Kotlin `MainA
 Source of truth lives in the repo and is pushed by `publishListing`:
 - `android/app/src/main/play/default-language.txt` (`en-US`) and `listings/en-US/{title,short-description,full-description}.txt` (limits: 30 / 80 / 4000 chars).
 - `listings/en-US/graphics/icon/icon.png` (512×512) and `graphics/feature-graphic/feature.png` (1024×500), generated from `assets/branding` by `python3 scripts/generate_play_assets.py` (needs Pillow). Re-run and commit after changing the branding.
+- The public contact email and website live in `android/app/src/main/play/contact-email.txt` and `contact-website.txt`.
 - The pipeline copies up to eight files from `assets/images/screenshots/` in filename order into the gitignored `graphics/phone-screenshots/` before `publishListing`. Keep at most eight screenshots in the source directory and use the same set in the README. [Google Play phone screenshot requirements](https://support.google.com/googleplay/android-developer/answer/9866151?hl=en)
 - Release notes: from the `RELEASE_NOTES` job parameter into `release-notes/en-US/default.txt` (gitignored).
 - Jenkins defaults are safe for a brand-new app: track `internal`, status `draft`.
@@ -62,4 +63,4 @@ Source of truth lives in the repo and is pushed by `publishListing`:
   `No accounts or login. On first launch, tap "Try demo" on the Setup screen to explore all features with built-in sample data. No server or credentials needed.`
   Leave username/password empty. The reviewed build must already contain the **Try demo** button, so publish a new version before resubmitting.
 - In the current Console UI this lives under **Publishing overview** (Visão geral da publicação) → app content / "Set up your app" tasks → App access; the old "Policy and programs → App content" menu may not exist. The global search box ("App access") also finds it.
-- Store listing texts/graphics are synced by the pipeline (see above); everything else (content rating, data safety, target audience, ads, category, contact details) is manual.
+- The pipeline syncs store listing text, graphics, and contact details. Complete the content rating, data safety, target audience, ads declaration, and category in Play Console.
